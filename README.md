@@ -173,20 +173,45 @@ MyFavoriteAlbums/
 - Album Upsert処理（重複排除）
 - 検索→保存→画像生成の完全なフロー実装
 
+✅ **フロントエンド実装**
+- React + TypeScript + Vite セットアップ
+- Tailwind CSS + shadcn/ui によるモダンなUI
+- 3x3アルバムグリッドによる直感的な操作
+- Spotify検索機能の統合
+- レスポンシブデザイン（スマホ対応）
+- ローカルストレージ連携
+
 ## ■環境変数の設定
 
 ### Spotify API認証情報の設定
 
+詳細なセットアップ手順は [`SPOTIFY_SETUP.md`](./SPOTIFY_SETUP.md) を参照してください。
+
+#### クイックスタート
+
 1. [Spotify for Developers](https://developer.spotify.com/dashboard) でアプリを作成
 2. `Client ID` と `Client Secret` を取得
-3. ローカル開発環境では、`.dev.vars`ファイルを作成（`.gitignore`に含まれています）:
+3. プロジェクトルートに `.dev.vars` ファイルを作成:
 
 ```bash
 SPOTIFY_CLIENT_ID=your-client-id
 SPOTIFY_CLIENT_SECRET=your-client-secret
 ```
 
-4. 本番環境では、Wrangler CLIでシークレットを設定:
+4. バックエンドサーバーを起動:
+
+```bash
+npm run dev
+```
+
+5. フロントエンドサーバーを起動（別ターミナル）:
+
+```bash
+cd frontend
+npm run dev
+```
+
+#### 本番環境での設定
 
 ```bash
 npx wrangler secret put SPOTIFY_CLIENT_ID
@@ -196,8 +221,10 @@ npx wrangler secret put SPOTIFY_CLIENT_SECRET
 ## ■次のステップ
 
 - [x] Spotify API連携（アルバム検索・取得）✅
+- [x] フロントエンド実装（3x3グリッドUI）✅
+- [ ] バックエンドとフロントエンドの完全な連携テスト
+- [ ] ドラッグ&ドロップでの順番変更機能
 - [ ] ユーザー認証機能
-- [ ] 投稿作成・編集・削除機能
-- [ ] フロントエンド実装
+- [ ] 投稿一覧・詳細画面の実装
 - [ ] 画像ダウンロード機能の最適化
 

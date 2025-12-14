@@ -49,7 +49,20 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
           }))
         );
       } catch (err) {
-        setError(err instanceof Error ? err.message : '検索に失敗しました');
+        console.error('検索エラー:', err);
+        const errorMessage = err instanceof Error ? err.message : '検索に失敗しました';
+        
+        // エラーメッセージをユーザーフレンドリーに変換
+        let userFriendlyMessage = errorMessage;
+        if (errorMessage.includes('Spotify API credentials not configured')) {
+          userFriendlyMessage = 'Spotify APIの設定が完了していません。管理者にお問い合わせください。';
+        } else if (errorMessage.includes('Failed to get access token')) {
+          userFriendlyMessage = 'Spotify APIの認証に失敗しました。';
+        } else if (errorMessage.includes('NetworkError') || errorMessage.includes('Failed to fetch')) {
+          userFriendlyMessage = 'サーバーに接続できません。バックエンドサーバーが起動しているか確認してください。';
+        }
+        
+        setError(userFriendlyMessage);
         setResults([]);
       } finally {
         setLoading(false);

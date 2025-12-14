@@ -32,9 +32,13 @@ export async function searchAlbums(query: string): Promise<{
   }>;
 }> {
   const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
+  
   if (!response.ok) {
-    throw new Error(`Search failed: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({ error: response.statusText }));
+    const errorMessage = errorData.message || errorData.error || `Search failed: ${response.statusText}`;
+    throw new Error(errorMessage);
   }
+  
   return await response.json();
 }
 
