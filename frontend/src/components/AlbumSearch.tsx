@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, Play } from 'lucide-react';
+import { Search, Loader2, Play, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -21,6 +21,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
   const [playerOpen, setPlayerOpen] = useState(false);
   const [playerSpotifyId, setPlayerSpotifyId] = useState<string>('');
   const [playerType, setPlayerType] = useState<'album' | 'artist'>('album');
+  const [playerAlbum, setPlayerAlbum] = useState<Album | undefined>(undefined);
 
   // ダイアログが開いた時に検索フィールドにフォーカス
   useEffect(() => {
@@ -138,6 +139,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
                   onClick={() => {
                     setPlayerSpotifyId(album.spotifyId);
                     setPlayerType('album');
+                    setPlayerAlbum(album);
                     setPlayerOpen(true);
                   }}
                 />
@@ -180,6 +182,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
                       e.stopPropagation();
                       setPlayerSpotifyId(album.spotifyId);
                       setPlayerType('album');
+                      setPlayerAlbum(album);
                       setPlayerOpen(true);
                     }}
                     title="アルバムを再生"
@@ -189,7 +192,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="h-8 w-8"
+                    className="h-8 w-8 text-primary hover:bg-primary/10"
                     onClick={(e) => {
                       e.stopPropagation();
                       onSelect(album);
@@ -197,7 +200,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
                     }}
                     title="アルバムを選択"
                   >
-                    <Search className="h-4 w-4" />
+                    <Plus className="h-4 w-4" />
                   </Button>
                 </div>
               </div>
@@ -211,7 +214,15 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
         isOpen={playerOpen}
         spotifyId={playerSpotifyId}
         embedType={playerType}
-        onClose={() => setPlayerOpen(false)}
+        album={playerAlbum}
+        onClose={() => {
+          setPlayerOpen(false);
+          setPlayerAlbum(undefined);
+        }}
+        onSelect={(album) => {
+          onSelect(album);
+          onClose();
+        }}
       />
     </div>
   );
