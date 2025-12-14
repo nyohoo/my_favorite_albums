@@ -69,10 +69,8 @@ export function AlbumGrid({
     }
   };
 
-  // ドラッグ可能なアイテムのIDリスト（空のスロットは除外）
-  const sortableIds = albums
-    .map((_, index) => (albums[index] ? `album-${index}` : null))
-    .filter((id): id is string => id !== null);
+  // すべてのスロット（空のスロットも含む）をドロップ先として認識できるようにする
+  const sortableIds = albums.map((_, index) => `album-${index}`);
 
   return (
     <DndContext
