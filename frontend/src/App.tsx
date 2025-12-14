@@ -93,19 +93,20 @@ function App() {
     const newAlbums = [...albums];
     const movedAlbum = newAlbums[fromIndex];
     
-    // 元の位置をnullにする
-    newAlbums[fromIndex] = null;
+    if (!movedAlbum) {
+      return; // 移動するアルバムがない場合は何もしない
+    }
     
     // 空のスロットにドロップした場合
     if (newAlbums[toIndex] === null) {
-      // その位置に直接配置（他の要素は移動しない）
+      // 元の位置をnullにし、新しい位置に配置
+      newAlbums[fromIndex] = null;
       newAlbums[toIndex] = movedAlbum;
     } else {
       // 既存のアルバムがあるスロットにドロップした場合は入れ替え
-      // 元の位置から削除
-      newAlbums.splice(fromIndex, 1);
-      // 新しい位置に挿入（既存の要素は後ろにずれる）
-      newAlbums.splice(toIndex, 0, movedAlbum);
+      const targetAlbum = newAlbums[toIndex];
+      newAlbums[fromIndex] = targetAlbum;
+      newAlbums[toIndex] = movedAlbum;
     }
     
     setAlbums(newAlbums);
