@@ -149,6 +149,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
                     onClick={() => {
                       setPlayerSpotifyId(album.spotifyId);
                       setPlayerType('album');
+                      setPlayerAlbum(album);
                       setPlayerOpen(true);
                     }}
                   >
@@ -162,6 +163,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
                       // 将来的にアーティストIDを追加する場合は、ここでアーティストプレーヤーを開く
                       setPlayerSpotifyId(album.spotifyId);
                       setPlayerType('album');
+                      setPlayerAlbum(album);
                       setPlayerOpen(true);
                     }}
                   >

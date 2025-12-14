@@ -34,6 +34,8 @@ export function SpotifyPlayer({
     if (album && onSelect) {
       onSelect(album);
       onClose();
+    } else {
+      console.warn('SpotifyPlayer: album or onSelect is missing', { album, onSelect });
     }
   };
 
@@ -54,7 +56,7 @@ export function SpotifyPlayer({
               <span className="text-xs text-muted-foreground">音量注意</span>
             </div>
             <div className="flex items-center gap-2">
-              {album && onSelect && (
+              {album && onSelect ? (
                 <Button
                   variant="default"
                   size="sm"
@@ -65,6 +67,11 @@ export function SpotifyPlayer({
                   <Plus className="h-4 w-4 mr-1" />
                   選択
                 </Button>
+              ) : (
+                <div className="text-xs text-muted-foreground">
+                  {!album && 'アルバム情報なし'}
+                  {album && !onSelect && '選択機能なし'}
+                </div>
               )}
               <Button
                 variant="ghost"
