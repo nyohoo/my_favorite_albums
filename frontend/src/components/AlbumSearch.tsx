@@ -82,7 +82,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
   return (
     <div className="space-y-4">
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground pointer-events-none z-10" />
         <Input
           type="text"
           placeholder="アルバム名やアーティスト名で検索..."
@@ -92,8 +92,8 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
             console.log('入力値変更:', newValue);
             setQuery(newValue);
           }}
-          className="pl-10 text-foreground"
-          autoFocus
+          className="pl-10 text-foreground relative z-0"
+          autoFocus={isOpen}
         />
       </div>
 
