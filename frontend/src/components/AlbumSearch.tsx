@@ -27,6 +27,11 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
   }, [isOpen]);
 
   useEffect(() => {
+    // ダイアログが閉じている場合は何もしない
+    if (!isOpen) {
+      return;
+    }
+
     if (query.trim().length === 0) {
       setResults([]);
       setError(null);
@@ -37,7 +42,9 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
       setLoading(true);
       setError(null);
       try {
+        console.log('検索開始:', query);
         const data = await searchAlbums(query);
+        console.log('検索結果:', data);
         setResults(
           data.albums.map((album) => ({
             spotifyId: album.spotifyId,
@@ -70,9 +77,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
     }, 500); // デバウンス: 500ms
 
     return () => clearTimeout(timeoutId);
-  }, [query]);
-
-  if (!isOpen) return null;
+  }, [query, isOpen]);
 
   return (
     <div className="space-y-4">
@@ -82,8 +87,12 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
           type="text"
           placeholder="アルバム名やアーティスト名で検索..."
           value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          className="pl-10"
+          onChange={(e) => {
+            const newValue = e.target.value;
+            console.log('入力値変更:', newValue);
+            setQuery(newValue);
+          }}
+          className="pl-10 text-foreground"
           autoFocus
         />
       </div>
