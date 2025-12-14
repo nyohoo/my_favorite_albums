@@ -39,14 +39,17 @@ export function AlbumSlot({
     isOver,
   } = useDroppable({
     id: `album-${index}`,
-    disabled: false, // 空のスロットもドロップ可能
+    disabled: false, // すべてのスロットをドロップ可能に
   });
 
-  // 空のスロットの場合はdroppable、選択済みの場合はsortableのrefを使用
+  // 既存のアルバムがあるスロットでも、ドロップ可能にするために両方のrefを設定
   const setNodeRef = (node: HTMLElement | null) => {
     if (album) {
+      // 既存のアルバムがあるスロット：sortableとdroppableの両方を設定
       setSortableRef(node);
+      setDroppableRef(node);
     } else {
+      // 空のスロット：droppableのみ
       setDroppableRef(node);
     }
   };
