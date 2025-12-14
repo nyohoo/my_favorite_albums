@@ -262,10 +262,11 @@ app.post('/api/posts', async (c) => {
 
     const db = getDb(c.env.DB);
 
-    // トランザクション内で処理
-    const result = await db.transaction(async (tx) => {
+    // ローカル環境ではトランザクションが動作しないため、個別のクエリとして実行
+    // 本番環境ではトランザクションを使用することを推奨
+    try {
       // 1. User処理: 同名なら既存、なければ新規作成
-      let user = await tx
+      let user = await db
         .select()
         .from(users)
         .where(eq(users.name, body.userName))
@@ -275,13 +276,13 @@ app.post('/api/posts', async (c) => {
       if (!user) {
         const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
         const now = new Date();
-        await tx.insert(users).values({
+        await db.insert(users).values({
           id: userId,
           name: body.userName,
           createdAt: now,
           updatedAt: now,
         });
-        user = await tx
+        user = await db
           .select()
           .from(users)
           .where(eq(users.id, userId))
@@ -296,7 +297,7 @@ app.post('/api/posts', async (c) => {
       // 2. Post作成
       const postId = `post_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
       const now = new Date();
-      await tx.insert(posts).values({
+      await db.insert(posts).values({
         id: postId,
         userId: user.id,
         title: body.title || null,
@@ -308,7 +309,7 @@ app.post('/api/posts', async (c) => {
       const albumIds: string[] = [];
       for (const albumData of body.albums) {
         // spotify_idで検索
-        let album = await tx
+        let album = await db
           .select()
           .from(albums)
           .where(eq(albums.spotifyId, albumData.spotifyId))
@@ -318,7 +319,7 @@ app.post('/api/posts', async (c) => {
         if (!album) {
           // 新規作成
           const albumId = `album_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-          await tx.insert(albums).values({
+          await db.insert(albums).values({
             id: albumId,
             spotifyId: albumData.spotifyId,
             name: albumData.name,
@@ -329,7 +330,7 @@ app.post('/api/posts', async (c) => {
             createdAt: now,
             updatedAt: now,
           });
-          album = await tx
+          album = await db
             .select()
             .from(albums)
             .where(eq(albums.id, albumId))
@@ -347,7 +348,7 @@ app.post('/api/posts', async (c) => {
       // 4. Link作成: post_albumsにposition付きで保存
       for (let i = 0; i < albumIds.length; i++) {
         const postAlbumId = `post_album_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 9)}`;
-        await tx.insert(postAlbums).values({
+        await db.insert(postAlbums).values({
           id: postAlbumId,
           postId: postId,
           albumId: albumIds[i],
@@ -356,14 +357,18 @@ app.post('/api/posts', async (c) => {
         });
       }
 
-      return { postId, userId: user.id };
-    });
+      const result = { postId, userId: user.id };
 
-    return c.json({
-      success: true,
-      id: result.postId,
-      userId: result.userId,
-    });
+      return c.json({
+        success: true,
+        id: result.postId,
+        userId: result.userId,
+      });
+    } catch (dbError) {
+      // データベースエラーの場合は、より詳細なエラーメッセージを返す
+      console.error('Database error:', dbError);
+      throw dbError;
+    }
   } catch (error) {
     console.error('Error creating post:', error);
     return c.json(
