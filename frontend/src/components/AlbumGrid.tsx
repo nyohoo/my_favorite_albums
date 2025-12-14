@@ -32,37 +32,6 @@ interface AlbumGridProps {
 
 import { AlbumSlot } from './AlbumSlot';
 
-// 空のスロットも考慮したカスタム並べ替え戦略
-// rectSortingStrategyをラップして、空のスロットも位置計算に含める
-const customRectSortingStrategy: SortingStrategy = (args) => {
-  const { activeIndex, overIndex, rects, activeNodeRect } = args;
-  
-  if (activeIndex === -1 || overIndex === -1 || !activeNodeRect) {
-    return null;
-  }
-
-  // すべてのスロット（空も含む）の位置を取得
-  // rectsは配列で、インデックスがスロットの位置に対応
-  const overRect = rects[overIndex];
-  
-  if (!overRect) {
-    return null;
-  }
-
-  // 位置の差分を計算（空のスロットも含めて正確に計算）
-  const delta = {
-    x: overRect.left - activeNodeRect.left,
-    y: overRect.top - activeNodeRect.top,
-  };
-
-  return {
-    x: delta.x,
-    y: delta.y,
-    scaleX: 1,
-    scaleY: 1,
-  };
-};
-
 export function AlbumGrid({
   albums,
   onAdd,
