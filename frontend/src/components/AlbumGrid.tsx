@@ -33,36 +33,33 @@ interface AlbumGridProps {
 import { AlbumSlot } from './AlbumSlot';
 
 // 空のスロットも考慮したカスタム並べ替え戦略
-// handleDragEndと同じロジックで位置を計算して、プレビュー位置を正確に表示
+// 各アイテムに対して個別にtransformを計算
 const customRectSortingStrategy: SortingStrategy = (args) => {
-  const { activeIndex, overIndex, rects, activeNodeRect } = args;
+  const { activeIndex, overIndex, index, rects, activeNodeRect } = args;
   
-  if (activeIndex === -1 || overIndex === -1) {
+  if (activeIndex === -1 || overIndex === -1 || index === -1) {
     return null;
   }
 
-  // activeNodeRectはドラッグ中のアイテムの現在の位置
-  // rects[overIndex]はドロップ先の位置
-  // この差分を計算することで、空のスロットも考慮した正確な位置を計算
-  const overRect = rects[overIndex];
-  
-  if (!overRect || !activeNodeRect) {
-    return null;
+  // ドラッグ中のアイテム自体のtransformを計算
+  if (index === activeIndex) {
+    // ドラッグ中のアイテムは、ドロップ先の位置に移動
+    const overRect = rects[overIndex];
+    if (!overRect || !activeNodeRect) {
+      return null;
+    }
+    return {
+      x: overRect.left - activeNodeRect.left,
+      y: overRect.top - activeNodeRect.top,
+      scaleX: 1,
+      scaleY: 1,
+    };
   }
 
-  // handleDragEndと同じロジックで位置の差分を計算
-  // activeNodeRect（ドラッグ中の現在位置）からoverRect（ドロップ先）への差分
-  const delta = {
-    x: overRect.left - activeNodeRect.left,
-    y: overRect.top - activeNodeRect.top,
-  };
-
-  return {
-    x: delta.x,
-    y: delta.y,
-    scaleX: 1,
-    scaleY: 1,
-  };
+  // 他のアイテムは移動しない（空のスロットへの移動の場合）
+  // 既存のスロットへの移動の場合のみ、入れ替えが発生する
+  // ただし、プレビューではドラッグ中のアイテムのみを移動させる
+  return null;
 };
 
 export function AlbumGrid({
