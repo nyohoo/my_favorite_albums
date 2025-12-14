@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2 } from 'lucide-react';
+import { Search, Loader2, Play } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { searchAlbums } from '@/lib/api';
+import { SpotifyPlayer } from './SpotifyPlayer';
 import type { Album } from './AlbumGrid';
 
 interface AlbumSearchProps {
@@ -16,6 +18,9 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
   const [results, setResults] = useState<Album[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [playerOpen, setPlayerOpen] = useState(false);
+  const [playerSpotifyId, setPlayerSpotifyId] = useState<string>('');
+  const [playerType, setPlayerType] = useState<'album' | 'artist'>('album');
 
   // ダイアログが開いた時に検索フィールドにフォーカス
   useEffect(() => {
@@ -126,33 +131,92 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
         {results.map((album) => (
           <Card
             key={album.spotifyId}
-            className="cursor-pointer hover:bg-accent transition-colors"
-            onClick={() => {
-              onSelect(album);
-              onClose();
-            }}
+            className="hover:bg-accent transition-colors"
           >
             <CardContent className="p-3">
               <div className="flex gap-3">
                 <img
                   src={album.imageUrl}
                   alt={album.name}
-                  className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded flex-shrink-0"
+                  className="w-16 h-16 sm:w-20 sm:h-20 object-cover rounded flex-shrink-0 cursor-pointer hover:opacity-80 transition-opacity"
+                  onClick={() => {
+                    setPlayerSpotifyId(album.spotifyId);
+                    setPlayerType('album');
+                    setPlayerOpen(true);
+                  }}
                 />
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold truncate text-sm sm:text-base">{album.name}</p>
-                  <p className="text-sm text-muted-foreground truncate">{album.artist}</p>
+                  <p
+                    className="font-semibold truncate text-sm sm:text-base cursor-pointer hover:text-primary transition-colors"
+                    onClick={() => {
+                      setPlayerSpotifyId(album.spotifyId);
+                      setPlayerType('album');
+                      setPlayerOpen(true);
+                    }}
+                  >
+                    {album.name}
+                  </p>
+                  <p
+                    className="text-sm text-muted-foreground truncate cursor-pointer hover:text-primary transition-colors"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // アーティストIDは現在のデータ構造に含まれていないため、一旦アルバムを開く
+                      // 将来的にアーティストIDを追加する場合は、ここでアーティストプレーヤーを開く
+                      setPlayerSpotifyId(album.spotifyId);
+                      setPlayerType('album');
+                      setPlayerOpen(true);
+                    }}
+                  >
+                    {album.artist}
+                  </p>
                   {album.releaseDate && (
                     <p className="text-xs text-muted-foreground mt-1">
                       {album.releaseDate}
                     </p>
                   )}
                 </div>
+                <div className="flex flex-col gap-2 items-end">
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPlayerSpotifyId(album.spotifyId);
+                      setPlayerType('album');
+                      setPlayerOpen(true);
+                    }}
+                    title="アルバムを再生"
+                  >
+                    <Play className="h-4 w-4 text-primary" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelect(album);
+                      onClose();
+                    }}
+                    title="アルバムを選択"
+                  >
+                    <Search className="h-4 w-4" />
+                  </Button>
+                </div>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Spotifyプレーヤー */}
+      <SpotifyPlayer
+        isOpen={playerOpen}
+        spotifyId={playerSpotifyId}
+        embedType={playerType}
+        onClose={() => setPlayerOpen(false)}
+      />
     </div>
   );
 }
