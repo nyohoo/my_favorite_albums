@@ -1,4 +1,4 @@
-import { Plus, X, GripVertical } from 'lucide-react';
+import { Plus, X, GripVertical, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSortable } from '@dnd-kit/sortable';
@@ -118,16 +118,20 @@ export function AlbumSlot({
           />
           {/* ホバー時のオーバーレイ */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2 pointer-events-none">
-            {/* 位置変更ボタン（視覚的な表示のみ） */}
+            {/* アルバム変更ボタン */}
             {album && (
               <Button
                 variant="secondary"
                 size="sm"
-                className="rounded-full pointer-events-none"
-                title="ドラッグして位置を変更"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onReplace();
+                }}
+                className="rounded-full pointer-events-auto"
+                title="アルバムを変更"
               >
-                <GripVertical className="h-4 w-4 mr-1" />
-                位置変更
+                <RefreshCw className="h-4 w-4 mr-1" />
+                アルバム変更
               </Button>
             )}
             <Button
