@@ -3,6 +3,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -72,9 +73,13 @@ export function AlbumGrid({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 8, // 8px移動してからドラッグ開始（誤タップ防止）
-        // タッチ操作では距離制約を緩和
-        tolerance: 5,
+        distance: 8, // マウス操作では8px移動してからドラッグ開始（誤クリック防止）
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200, // タッチ操作では200ms長押しでドラッグ開始
+        tolerance: 5, // 5pxまでの移動は許容
       },
     }),
     useSensor(KeyboardSensor, {
