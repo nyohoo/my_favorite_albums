@@ -35,5 +35,5 @@ yarn-error.log*
 *.db-journal
 
 # Old Directories
-/backend/
-/front/
+/old_backend/
+/old_front/
