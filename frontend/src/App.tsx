@@ -275,7 +275,7 @@ function App() {
 
         {/* 検索ダイアログ */}
         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
-          <DialogContent className="max-w-2xl max-h-[80vh] sm:max-h-[85vh]">
+          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[80vh] sm:max-h-[85vh] mx-2 sm:mx-0">
             <DialogHeader>
               <DialogTitle>アルバムを検索</DialogTitle>
               <DialogDescription>
