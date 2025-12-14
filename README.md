@@ -91,13 +91,16 @@ npm run db:studio
 
 ## ■APIエンドポイント
 
-### 画像生成（※現在はJSON返却）
-- `GET /api/vibe-card?postId=xxx` - 投稿IDからVibe Card画像を生成（未実装）
-- `GET /api/vibe-card/test` - テスト用（モックデータをJSONで返却）
+### 画像生成
+- `GET /api/vibe-card?postId=xxx` - 投稿IDからVibe Card画像を生成
+- `GET /api/vibe-card/test` - テスト用（モックデータで画像生成）
 
 ### 投稿
 - `GET /api/posts` - 投稿一覧取得
 - `GET /api/posts/:id` - 投稿詳細取得（アルバム情報含む）
+
+### Spotify API連携
+- `GET /api/search?q=検索クエリ` - Spotify APIでアルバム検索
 
 ## ■プロジェクト構造
 
@@ -108,6 +111,8 @@ MyFavoriteAlbums/
 │   ├── db/
 │   │   ├── index.ts      # DB接続設定
 │   │   └── schema.ts     # Drizzleスキーマ定義
+│   ├── services/
+│   │   └── spotify.ts    # Spotify API連携サービス
 │   ├── types/
 │   │   └── env.d.ts      # 環境変数の型定義
 │   └── utils/
@@ -130,16 +135,41 @@ MyFavoriteAlbums/
 - ヘルスチェック (`GET /`)
 - 投稿一覧取得 (`GET /api/posts`)
 - 投稿詳細取得 (`GET /api/posts/:id`)
-- テスト用エンドポイント (`GET /api/vibe-card/test`)
 
-⚠️ **画像生成機能（Vibe Card）**
-- `src/utils/vibe-card.tsx`に実装済み
-- **注意**: `@vercel/og`はCloudflare Workersでは動作しないため、現在は未使用
-- 代替実装が必要（SVG生成、Cloudflare Pages Functions、外部API等）
+✅ **画像生成機能（Vibe Card）**
+- `satori` + `@resvg/resvg-wasm`を使用した画像生成
+- Cloudflare Workers対応
+- 日本語フォント（Noto Sans JP）対応
+- SVGフォールバック機能実装
+
+✅ **Spotify API連携**
+- Client Credentials Flowによるアクセストークン取得
+- アルバム検索機能 (`GET /api/search`)
+- DBのalbumsテーブル形式に整形したレスポンス
+
+## ■環境変数の設定
+
+### Spotify API認証情報の設定
+
+1. [Spotify for Developers](https://developer.spotify.com/dashboard) でアプリを作成
+2. `Client ID` と `Client Secret` を取得
+3. ローカル開発環境では、`.dev.vars`ファイルを作成（`.gitignore`に含まれています）:
+
+```bash
+SPOTIFY_CLIENT_ID=your-client-id
+SPOTIFY_CLIENT_SECRET=your-client-secret
+```
+
+4. 本番環境では、Wrangler CLIでシークレットを設定:
+
+```bash
+npx wrangler secret put SPOTIFY_CLIENT_ID
+npx wrangler secret put SPOTIFY_CLIENT_SECRET
+```
 
 ## ■次のステップ
 
-- [ ] Spotify API連携（アルバム検索・取得）
+- [x] Spotify API連携（アルバム検索・取得）✅
 - [ ] ユーザー認証機能
 - [ ] 投稿作成・編集・削除機能
 - [ ] フロントエンド実装
