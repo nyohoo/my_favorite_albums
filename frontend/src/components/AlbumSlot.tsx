@@ -130,8 +130,8 @@ export function AlbumSlot({
                 className="rounded-full pointer-events-auto"
                 title="アルバムを変更"
               >
-                <RefreshCw className="h-4 w-4 mr-1" />
-                アルバム変更
+                <RefreshCw className="h-4 w-4 sm:mr-1" />
+                <span className="hidden sm:inline">アルバム変更</span>
               </Button>
             )}
             <Button
