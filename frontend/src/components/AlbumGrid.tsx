@@ -10,7 +10,7 @@ import {
 import {
   SortableContext,
   sortableKeyboardCoordinates,
-  type SortingStrategy,
+  rectSortingStrategy,
 } from '@dnd-kit/sortable';
 
 export interface Album {
@@ -117,7 +117,7 @@ export function AlbumGrid({
       onDragEnd={handleDragEnd}
       modifiers={[]} // アニメーションの修正を無効化
     >
-      <SortableContext items={sortableIds} strategy={customRectSortingStrategy}>
+      <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
           {albums.map((album, index) => (
             <AlbumSlot
