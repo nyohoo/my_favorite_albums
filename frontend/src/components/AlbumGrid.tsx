@@ -11,9 +11,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
-  type SortingStrategy,
 } from '@dnd-kit/sortable';
-import type { Active, Over } from '@dnd-kit/core';
 
 export interface Album {
   spotifyId: string;
@@ -33,39 +31,6 @@ interface AlbumGridProps {
 }
 
 import { AlbumSlot } from './AlbumSlot';
-
-// 空のスロットも考慮したカスタム並べ替え戦略
-// rectSortingStrategyはdisabledなアイテムを無視するため、空のスロットを考慮した位置計算を行う
-const customRectSortingStrategy: SortingStrategy = (args) => {
-  const { active, over, rects, scrollAdjustedTranslate } = args;
-  
-  if (!over || !active) {
-    return null;
-  }
-
-  // すべてのスロット（空も含む）の位置を計算
-  const activeRect = rects[active.id];
-  const overRect = rects[over.id];
-
-  if (!activeRect || !overRect) {
-    return null;
-  }
-
-  // 空のスロットも含めて、実際のインデックス位置を計算
-  const activeIndex = parseInt(active.id.toString().replace('album-', ''));
-  const overIndex = parseInt(over.id.toString().replace('album-', ''));
-
-  // 位置の差分を計算
-  const delta = {
-    x: overRect.left - activeRect.left,
-    y: overRect.top - activeRect.top,
-  };
-
-  return {
-    x: delta.x + (scrollAdjustedTranslate?.x || 0),
-    y: delta.y + (scrollAdjustedTranslate?.y || 0),
-  };
-};
 
 export function AlbumGrid({
   albums,
@@ -121,7 +86,7 @@ export function AlbumGrid({
       onDragEnd={handleDragEnd}
       modifiers={[]} // アニメーションの修正を無効化
     >
-      <SortableContext items={sortableIds} strategy={customRectSortingStrategy}>
+      <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
           {albums.map((album, index) => (
             <AlbumSlot
