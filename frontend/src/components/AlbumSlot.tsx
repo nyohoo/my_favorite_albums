@@ -97,15 +97,17 @@ export function AlbumSlot({
       <Card className={`relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''}`}>
         <CardContent className="p-0 h-full relative">
           {/* ドラッグハンドル（常に表示） */}
-          <div
-            {...attributes}
-            {...listeners}
-            className="absolute top-2 right-2 z-10 bg-black/60 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none"
-            title="ドラッグして移動"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <GripVertical className="h-4 w-4 text-white" />
-          </div>
+          {album && (
+            <div
+              {...attributes}
+              {...listeners}
+              className="absolute top-2 right-2 z-10 bg-black/60 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none"
+              title="ドラッグして移動"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <GripVertical className="h-4 w-4 text-white" />
+            </div>
+          )}
           <img
             src={album.imageUrl}
             alt={album.name}
@@ -114,24 +116,26 @@ export function AlbumSlot({
           {/* ホバー時のオーバーレイ */}
           <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
             {/* 位置変更ボタン（ドラッグハンドルとして機能） */}
-            <div
-              {...attributes}
-              {...listeners}
-              className="cursor-grab active:cursor-grabbing"
-              onClick={(e) => {
-                e.stopPropagation();
-              }}
-            >
-              <Button
-                variant="secondary"
-                size="sm"
-                className="rounded-full pointer-events-none"
-                title="ドラッグして位置を変更"
+            {album && (
+              <div
+                {...attributes}
+                {...listeners}
+                className="cursor-grab active:cursor-grabbing"
+                onClick={(e) => {
+                  e.stopPropagation();
+                }}
               >
-                <GripVertical className="h-4 w-4 mr-1" />
-                位置変更
-              </Button>
-            </div>
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className="rounded-full pointer-events-none"
+                  title="ドラッグして位置を変更"
+                >
+                  <GripVertical className="h-4 w-4 mr-1" />
+                  位置変更
+                </Button>
+              </div>
+            )}
             <Button
               variant="destructive"
               size="icon"
