@@ -5,6 +5,20 @@
 「#私を構成する9枚」という共通のフォーマットを介して  
 簡単にシェアすることが可能なサービスです  
 
+## ■新生プロジェクトの特徴
+
+### 技術スタック
+- **Runtime:** Cloudflare Workers (TypeScript)
+- **Framework:** Hono (軽量・高速でエッジに最適)
+- **Database:** Cloudflare D1 (SQLite)
+- **ORM:** Drizzle ORM
+- **Image Gen:** @vercel/og (SatoriベースでJSXから画像を生成)
+
+### 目標
+1. **維持費0円** - 個人開発として持続可能な構成
+2. **新しい拡散モデル** - 高品質なVibe Card画像の生成・ダウンロード機能
+3. **エッジコンピューティング** - RailsからCloudflareへ完全移行
+
 ## ■メインのターゲットユーザー  
 ・音楽好きなツイッタラー  
 ・自分の知らない音楽を探したい人  
@@ -46,17 +60,87 @@
   ・アルバム名で検索すると、該当アルバムを含んだ投稿を表示
   ・投稿一覧画面でハッシュタグごとに絞り込めるようにする
 
-## ■なぜこのサービスを作りたいのか？  
-  「この人は意外とこういう音楽が好きなんだ〜！」「好きなアーティストが同じだ〜！」などの発見をきっかけに  
-  話が弾んで気が合う友達ができた経験はないでしょうか？  
-  聴いてきた音楽の遍歴には、多少なりとも本人の性格・価値観が反映されているから、  
-  「類は友を呼ぶ」のような形で波長の合う人を探すことができるのだと私は思います。  
-  
-  なので、自分の好みの音楽をサービスを通してシェアしてもらい、  
-  また、いろんな人の音楽の好みを知り、交流が始まる一つのきっかけとなるサービスになれば嬉しいです！
+## ■開発コマンド
 
-## ■スケジュール  
-  README~ER図作成：5/29〆切  
-  メイン機能実装：6/14〆切  
-  β版をRUNTEQ内リリース（MVP）：6/14〆切  
-  本番リリース：6月末  
+### セットアップ
+```bash
+npm install
+```
+
+### ローカル開発
+```bash
+npm run dev
+```
+
+### デプロイ
+```bash
+npm run deploy
+```
+
+### データベース操作
+```bash
+# マイグレーションファイルの生成
+npm run db:generate
+
+# マイグレーションの適用
+npm run db:migrate
+
+# Drizzle Studio（DB管理UI）の起動
+npm run db:studio
+```
+
+## ■APIエンドポイント
+
+### 画像生成（※現在はJSON返却）
+- `GET /api/vibe-card?postId=xxx` - 投稿IDからVibe Card画像を生成（未実装）
+- `GET /api/vibe-card/test` - テスト用（モックデータをJSONで返却）
+
+### 投稿
+- `GET /api/posts` - 投稿一覧取得
+- `GET /api/posts/:id` - 投稿詳細取得（アルバム情報含む）
+
+## ■プロジェクト構造
+
+```
+MyFavoriteAlbums/
+├── src/
+│   ├── index.ts          # メインエントリーポイント（APIルート定義）
+│   ├── db/
+│   │   ├── index.ts      # DB接続設定
+│   │   └── schema.ts     # Drizzleスキーマ定義
+│   ├── types/
+│   │   └── env.d.ts      # 環境変数の型定義
+│   └── utils/
+│       └── vibe-card.tsx # Vibe Card画像生成ロジック
+├── migrations/            # マイグレーションファイル
+├── wrangler.toml         # Cloudflare Workers設定
+├── drizzle.config.ts     # Drizzle設定
+└── package.json
+```
+
+## ■実装済み機能
+
+✅ **プロジェクト初期化**
+- Wrangler + Hono + TypeScript のセットアップ
+- Cloudflare D1 データベース設定
+- Drizzle ORM の設定
+- マイグレーションファイル生成
+
+✅ **基本的なAPIエンドポイント**
+- ヘルスチェック (`GET /`)
+- 投稿一覧取得 (`GET /api/posts`)
+- 投稿詳細取得 (`GET /api/posts/:id`)
+- テスト用エンドポイント (`GET /api/vibe-card/test`)
+
+⚠️ **画像生成機能（Vibe Card）**
+- `src/utils/vibe-card.tsx`に実装済み
+- **注意**: `@vercel/og`はCloudflare Workersでは動作しないため、現在は未使用
+- 代替実装が必要（SVG生成、Cloudflare Pages Functions、外部API等）
+
+## ■次のステップ
+
+- [ ] Spotify API連携（アルバム検索・取得）
+- [ ] ユーザー認証機能
+- [ ] 投稿作成・編集・削除機能
+- [ ] フロントエンド実装
+- [ ] 画像ダウンロード機能の最適化
