@@ -30,13 +30,14 @@ export function AlbumSlot({
   } = useSortable({
     id: `album-${index}`,
     disabled: !album, // 空のスロットはドラッグ不可
+    animateLayoutChanges: () => false, // レイアウト変更のアニメーションを無効化
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: isDragging ? 'none' : transition, // ドラッグ中はアニメーション無効
-    opacity: isDragging ? 0.8 : 1, // 透明度を上げて見やすく
-    zIndex: isDragging ? 50 : 1, // ドラッグ中は前面に
+    transition: 'none', // すべてのアニメーションを無効化
+    opacity: isDragging ? 0.8 : 1,
+    zIndex: isDragging ? 50 : 1,
   };
 
   if (!album) {
