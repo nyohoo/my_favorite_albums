@@ -5,9 +5,12 @@ import { getDb } from './db';
 import { posts, postAlbums, albums } from './db/schema';
 import { eq, asc, inArray } from 'drizzle-orm';
 import { generateVibeCard } from './utils/vibe-card';
+import { searchAlbums } from './services/spotify';
 
 type Bindings = {
   DB: D1Database;
+  SPOTIFY_CLIENT_ID: string;
+  SPOTIFY_CLIENT_SECRET: string;
 };
 
 type Variables = {};
@@ -180,6 +183,50 @@ app.get('/api/posts/:id', async (c) => {
   } catch (error) {
     console.error('Error fetching post:', error);
     return c.json({ error: 'Failed to fetch post' }, 500);
+  }
+});
+
+// Spotify APIでアルバム検索
+// GET /api/search?q=検索クエリ
+app.get('/api/search', async (c) => {
+  try {
+    const query = c.req.query('q');
+
+    if (!query || query.trim().length === 0) {
+      return c.json({ error: 'Query parameter "q" is required' }, 400);
+    }
+
+    // 環境変数の確認
+    if (!c.env.SPOTIFY_CLIENT_ID || !c.env.SPOTIFY_CLIENT_SECRET) {
+      return c.json(
+        { 
+          error: 'Spotify API credentials not configured',
+          message: 'Please set SPOTIFY_CLIENT_ID and SPOTIFY_CLIENT_SECRET environment variables',
+        },
+        500
+      );
+    }
+
+    // Spotify APIで検索
+    const results = await searchAlbums(query, {
+      clientId: c.env.SPOTIFY_CLIENT_ID,
+      clientSecret: c.env.SPOTIFY_CLIENT_SECRET,
+    });
+
+    return c.json({
+      query,
+      count: results.length,
+      albums: results,
+    });
+  } catch (error) {
+    console.error('Error searching albums:', error);
+    return c.json(
+      { 
+        error: 'Failed to search albums',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    );
   }
 });
 

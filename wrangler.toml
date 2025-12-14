@@ -9,9 +9,11 @@ binding = "DB"
 database_name = "my-favorite-albums"
 database_id = "" # 初回デプロイ後に自動生成される
 
-# 環境変数の設定例（必要に応じて追加）
-# [vars]
-# ENVIRONMENT = "development"
+# 環境変数の設定
+[vars]
+# Spotify API認証情報（本番環境では wrangler secret put を使用）
+# SPOTIFY_CLIENT_ID = "your-client-id"
+# SPOTIFY_CLIENT_SECRET = "your-client-secret"
 
 # KV Namespaceの設定例（必要に応じて追加）
 # [[kv_namespaces]]

@@ -1,0 +1,7 @@
+# Spotify API認証情報
+# このファイルをコピーして .dev.vars を作成し、実際の値を設定してください
+# .dev.vars は .gitignore に含まれているため、コミットされません
+
+SPOTIFY_CLIENT_ID=your-client-id-here
+SPOTIFY_CLIENT_SECRET=your-client-secret-here
+
