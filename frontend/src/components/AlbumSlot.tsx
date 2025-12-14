@@ -155,10 +155,6 @@ export function AlbumSlot({
               {album.artist}
             </p>
           </div>
-          {/* 番号表示 */}
-          <div className="absolute top-2 left-2 bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs font-bold">
-            {index + 1}
-          </div>
         </CardContent>
       </Card>
     </div>
