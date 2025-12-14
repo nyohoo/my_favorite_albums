@@ -78,6 +78,14 @@ function App() {
     saveToLocalStorage(newAlbums);
   };
 
+  const handleReorder = (fromIndex: number, toIndex: number) => {
+    const newAlbums = [...albums];
+    const [movedAlbum] = newAlbums.splice(fromIndex, 1);
+    newAlbums.splice(toIndex, 0, movedAlbum);
+    setAlbums(newAlbums);
+    saveToLocalStorage(newAlbums);
+  };
+
   const handleSelect = (album: Album) => {
     if (selectedIndex !== null) {
       const newAlbums = [...albums];
@@ -213,6 +221,7 @@ function App() {
           onAdd={handleAdd}
           onRemove={handleRemove}
           onReplace={handleReplace}
+          onReorder={handleReorder}
         />
 
         {/* 作成ボタン */}

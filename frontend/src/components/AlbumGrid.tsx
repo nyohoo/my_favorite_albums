@@ -1,6 +1,23 @@
-import { Plus, X } from 'lucide-react';
+import { Plus, X, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  rectSortingStrategy,
+  useSortable,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 export interface Album {
   spotifyId: string;
@@ -16,80 +33,73 @@ interface AlbumGridProps {
   onAdd: (index: number) => void;
   onRemove: (index: number) => void;
   onReplace: (index: number) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
 }
 
-export function AlbumGrid({ albums, onAdd, onRemove, onReplace }: AlbumGridProps) {
+import { AlbumSlot } from './AlbumSlot';
+
+export function AlbumGrid({
+  albums,
+  onAdd,
+  onRemove,
+  onReplace,
+  onReorder,
+}: AlbumGridProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // 8px移動してからドラッグ開始（誤タップ防止）
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeIndex = albums.findIndex(
+      (_, index) => `album-${index}` === active.id
+    );
+    const overIndex = albums.findIndex(
+      (_, index) => `album-${index}` === over.id
+    );
+
+    if (activeIndex !== -1 && overIndex !== -1) {
+      onReorder(activeIndex, overIndex);
+    }
+  };
+
+  // ドラッグ可能なアイテムのIDリスト（空のスロットは除外）
+  const sortableIds = albums
+    .map((_, index) => (albums[index] ? `album-${index}` : null))
+    .filter((id): id is string => id !== null);
+
   return (
-    <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
-      {albums.map((album, index) => (
-        <div key={index} className="aspect-square">
-          {album ? (
-            <Card className="relative h-full group cursor-pointer">
-              <CardContent className="p-0 h-full relative">
-                <img
-                  src={album.imageUrl}
-                  alt={album.name}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-                {/* ホバー時のオーバーレイ */}
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center gap-2">
-                  <Button
-                    variant="secondary"
-                    size="sm"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onReplace(index);
-                    }}
-                    className="rounded-full"
-                  >
-                    入れ替え
-                  </Button>
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onRemove(index);
-                    }}
-                    className="rounded-full"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                {/* アルバム情報 */}
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/90 via-black/70 to-transparent p-2 rounded-b-lg">
-                  <p className="text-white text-xs font-bold truncate">
-                    {album.name}
-                  </p>
-                  <p className="text-white/80 text-xs truncate">
-                    {album.artist}
-                  </p>
-                </div>
-                {/* 番号表示 */}
-                <div className="absolute top-2 left-2 bg-primary text-primary-foreground rounded-full w-6 h-6 sm:w-7 sm:h-7 flex items-center justify-center text-xs font-bold">
-                  {index + 1}
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="h-full border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors cursor-pointer">
-              <CardContent className="h-full flex items-center justify-center p-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onAdd(index)}
-                  className="h-full w-full rounded-lg flex flex-col items-center justify-center gap-2"
-                >
-                  <Plus className="h-8 w-8 sm:h-10 sm:w-10 text-muted-foreground" />
-                  <span className="text-xs text-muted-foreground hidden sm:block">
-                    アルバムを追加
-                  </span>
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+    >
+      <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+          {albums.map((album, index) => (
+            <AlbumSlot
+              key={index}
+              album={album}
+              index={index}
+              onAdd={() => onAdd(index)}
+              onRemove={() => onRemove(index)}
+              onReplace={() => onReplace(index)}
+            />
+          ))}
         </div>
-      ))}
-    </div>
+      </SortableContext>
+    </DndContext>
   );
 }
