@@ -1,6 +1,18 @@
-import { Plus, X } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  SortableContext,
+  sortableKeyboardCoordinates,
+  type SortingStrategy,
+} from '@dnd-kit/sortable';
 
 export interface Album {
   spotifyId: string;
@@ -15,58 +27,116 @@ interface AlbumGridProps {
   albums: (Album | null)[];
   onAdd: (index: number) => void;
   onRemove: (index: number) => void;
+  onReplace: (index: number) => void;
+  onReorder: (fromIndex: number, toIndex: number) => void;
 }
 
-export function AlbumGrid({ albums, onAdd, onRemove }: AlbumGridProps) {
+import { AlbumSlot } from './AlbumSlot';
+
+// 空のスロットも考慮したカスタム並べ替え戦略
+// 各アイテムに対して個別にtransformを計算
+const customRectSortingStrategy: SortingStrategy = (args) => {
+  const { activeIndex, overIndex, index, rects, activeNodeRect } = args;
+  
+  if (activeIndex === -1 || overIndex === -1 || index === -1) {
+    return null;
+  }
+
+  // ドラッグ中のアイテム自体のtransformを計算
+  if (index === activeIndex) {
+    // ドラッグ中のアイテムは、ドロップ先の位置に移動
+    const overRect = rects[overIndex];
+    if (!overRect || !activeNodeRect) {
+      return null;
+    }
+    return {
+      x: overRect.left - activeNodeRect.left,
+      y: overRect.top - activeNodeRect.top,
+      scaleX: 1,
+      scaleY: 1,
+    };
+  }
+
+  // 他のアイテムは移動しない（空のスロットへの移動の場合）
+  // 既存のスロットへの移動の場合のみ、入れ替えが発生する
+  // ただし、プレビューではドラッグ中のアイテムのみを移動させる
+  return null;
+};
+
+export function AlbumGrid({
+  albums,
+  onAdd,
+  onRemove,
+  onReplace,
+  onReorder,
+}: AlbumGridProps) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // マウス操作では8px移動してからドラッグ開始（誤クリック防止）
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 200, // タッチ操作では200ms長押しでドラッグ開始
+        tolerance: 5, // 5pxまでの移動は許容
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const activeIndex = albums.findIndex(
+      (_, index) => `album-${index}` === active.id
+    );
+    const overIndex = albums.findIndex(
+      (_, index) => `album-${index}` === over.id
+    );
+
+    if (activeIndex !== -1 && overIndex !== -1) {
+      // 空のスロットにドロップした場合の特別な処理
+      if (albums[overIndex] === null) {
+        // 空のスロットに直接配置（他のスロットは影響を受けない）
+        onReorder(activeIndex, overIndex);
+      } else {
+        // 既存のアルバムがあるスロットにドロップした場合は通常の入れ替え
+        onReorder(activeIndex, overIndex);
+      }
+    }
+  };
+
+  // すべてのスロット（空のスロットも含む）をドロップ先として認識できるようにする
+  const sortableIds = albums.map((_, index) => `album-${index}`);
+
   return (
-    <div className="grid grid-cols-3 gap-4 max-w-2xl mx-auto">
-      {albums.map((album, index) => (
-        <div key={index} className="aspect-square">
-          {album ? (
-            <Card className="relative h-full group">
-              <CardContent className="p-0 h-full">
-                <img
-                  src={album.imageUrl}
-                  alt={album.name}
-                  className="w-full h-full object-cover rounded-lg"
-                />
-                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    onClick={() => onRemove(index)}
-                    className="rounded-full"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/80 to-transparent p-2 rounded-b-lg">
-                  <p className="text-white text-xs font-bold truncate">
-                    {album.name}
-                  </p>
-                  <p className="text-white/80 text-xs truncate">
-                    {album.artist}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <Card className="h-full border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
-              <CardContent className="h-full flex items-center justify-center p-0">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => onAdd(index)}
-                  className="h-full w-full rounded-lg"
-                >
-                  <Plus className="h-8 w-8 text-gray-400" />
-                </Button>
-              </CardContent>
-            </Card>
-          )}
+    <DndContext
+      sensors={sensors}
+      collisionDetection={closestCenter}
+      onDragEnd={handleDragEnd}
+      modifiers={[]} // アニメーションの修正を無効化
+    >
+      <SortableContext items={sortableIds} strategy={customRectSortingStrategy}>
+        <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+          {albums.map((album, index) => (
+            <AlbumSlot
+              key={index}
+              album={album}
+              index={index}
+              onAdd={() => onAdd(index)}
+              onRemove={() => onRemove(index)}
+              onReplace={() => onReplace(index)}
+            />
+          ))}
         </div>
-      ))}
-    </div>
+      </SortableContext>
+    </DndContext>
   );
 }
-

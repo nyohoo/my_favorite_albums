@@ -15,7 +15,7 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:8787',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, ''),
+        // rewriteを削除: バックエンドのエンドポイントは /api/* なので、そのまま転送
       },
     },
   },
