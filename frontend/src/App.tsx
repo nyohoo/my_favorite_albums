@@ -80,8 +80,23 @@ function App() {
 
   const handleReorder = (fromIndex: number, toIndex: number) => {
     const newAlbums = [...albums];
-    const [movedAlbum] = newAlbums.splice(fromIndex, 1);
-    newAlbums.splice(toIndex, 0, movedAlbum);
+    const movedAlbum = newAlbums[fromIndex];
+    
+    // 元の位置をnullにする
+    newAlbums[fromIndex] = null;
+    
+    // 空のスロットにドロップした場合
+    if (newAlbums[toIndex] === null) {
+      // その位置に直接配置（他の要素は移動しない）
+      newAlbums[toIndex] = movedAlbum;
+    } else {
+      // 既存のアルバムがあるスロットにドロップした場合は入れ替え
+      // 元の位置から削除
+      newAlbums.splice(fromIndex, 1);
+      // 新しい位置に挿入（既存の要素は後ろにずれる）
+      newAlbums.splice(toIndex, 0, movedAlbum);
+    }
+    
     setAlbums(newAlbums);
     saveToLocalStorage(newAlbums);
   };

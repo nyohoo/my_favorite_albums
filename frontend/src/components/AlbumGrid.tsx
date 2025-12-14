@@ -65,7 +65,14 @@ export function AlbumGrid({
     );
 
     if (activeIndex !== -1 && overIndex !== -1) {
-      onReorder(activeIndex, overIndex);
+      // 空のスロットにドロップした場合の特別な処理
+      if (albums[overIndex] === null) {
+        // 空のスロットに直接配置（他のスロットは影響を受けない）
+        onReorder(activeIndex, overIndex);
+      } else {
+        // 既存のアルバムがあるスロットにドロップした場合は通常の入れ替え
+        onReorder(activeIndex, overIndex);
+      }
     }
   };
 
