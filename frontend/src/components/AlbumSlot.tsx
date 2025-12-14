@@ -62,15 +62,20 @@ export function AlbumSlot({
   }
 
   return (
-    <div ref={setNodeRef} style={style} className="aspect-square">
-      <Card className="relative h-full group cursor-move">
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`aspect-square ${isDragging ? 'cursor-grabbing' : ''}`}
+    >
+      <Card className={`relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''}`}>
         <CardContent className="p-0 h-full relative">
           {/* ドラッグハンドル */}
           <div
             {...attributes}
             {...listeners}
-            className="absolute top-2 right-2 z-10 bg-black/60 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing"
+            className="absolute top-2 right-2 z-10 bg-black/60 rounded-full p-1 opacity-0 group-hover:opacity-100 transition-opacity cursor-grab active:cursor-grabbing touch-none"
             title="ドラッグして移動"
+            onClick={(e) => e.stopPropagation()}
           >
             <GripVertical className="h-4 w-4 text-white" />
           </div>
