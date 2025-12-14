@@ -38,3 +38,8 @@ yarn-error.log*
 # Old Directories
 /old_backend/
 /old_front/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+frontend/.vite/
