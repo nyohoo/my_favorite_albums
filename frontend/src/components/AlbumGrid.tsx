@@ -11,6 +11,7 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
+  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 
 export interface Album {
@@ -84,6 +85,7 @@ export function AlbumGrid({
       sensors={sensors}
       collisionDetection={closestCenter}
       onDragEnd={handleDragEnd}
+      modifiers={[]} // アニメーションの修正を無効化
     >
       <SortableContext items={sortableIds} strategy={rectSortingStrategy}>
         <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
