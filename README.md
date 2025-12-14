@@ -98,6 +98,7 @@ npm run db:studio
 ### 投稿
 - `GET /api/posts` - 投稿一覧取得
 - `GET /api/posts/:id` - 投稿詳細取得（アルバム情報含む）
+- `POST /api/posts` - 投稿作成（アルバム選択から保存まで）
 
 ### Spotify API連携
 - `GET /api/search?q=検索クエリ` - Spotify APIでアルバム検索
@@ -146,6 +147,12 @@ MyFavoriteAlbums/
 - Client Credentials Flowによるアクセストークン取得
 - アルバム検索機能 (`GET /api/search`)
 - DBのalbumsテーブル形式に整形したレスポンス
+
+✅ **投稿作成機能**
+- 投稿作成API (`POST /api/posts`)
+- User/Album/Post/PostAlbumのトランザクション処理
+- Album Upsert処理（重複排除）
+- 検索→保存→画像生成の完全なフロー実装
 
 ## ■環境変数の設定
 
