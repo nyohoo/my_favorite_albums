@@ -11,7 +11,6 @@ import {
   SortableContext,
   sortableKeyboardCoordinates,
   rectSortingStrategy,
-  verticalListSortingStrategy,
 } from '@dnd-kit/sortable';
 
 export interface Album {

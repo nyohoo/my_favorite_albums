@@ -30,8 +30,13 @@ export function AlbumSlot({
     isDragging,
   } = useSortable({
     id: `album-${index}`,
-    disabled: !album, // 空のスロットはドラッグ不可
+    disabled: !album, // 空のスロットはドラッグ不可（ただしドロップ先として認識される）
     animateLayoutChanges: () => false, // レイアウト変更のアニメーションを無効化
+    // 空のスロットも位置計算に含めるため、data属性で位置情報を保持
+    data: {
+      index,
+      isEmpty: !album,
+    },
   });
 
   const {
@@ -56,7 +61,7 @@ export function AlbumSlot({
 
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition: 'none', // すべてのアニメーションを無効化
+    transition: isDragging ? 'none' : transition, // ドラッグ中のみアニメーション無効化
     opacity: isDragging ? 0.8 : 1,
     zIndex: isDragging ? 50 : 1,
   };
