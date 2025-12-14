@@ -1,0 +1,38 @@
+{
+  "name": "my-favorite-albums",
+  "version": "1.0.0",
+  "description": "MyFavoriteAlbums - 維持費0円を目指したモダンな音楽アルバム共有サービス",
+  "main": "src/index.ts",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "wrangler d1 migrations apply my-favorite-albums",
+    "db:studio": "drizzle-kit studio"
+  },
+  "keywords": [
+    "cloudflare",
+    "workers",
+    "hono",
+    "music",
+    "albums"
+  ],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250115.0",
+    "@types/node": "^20.17.6",
+    "drizzle-kit": "^0.30.0",
+    "typescript": "^5.7.2",
+    "wrangler": "^4.54.0"
+  },
+  "dependencies": {
+    "@resvg/resvg-wasm": "^2.6.2",
+    "@types/react": "^19.2.7",
+    "@vercel/og": "^1.0.0",
+    "drizzle-orm": "^0.36.4",
+    "hono": "^4.6.11",
+    "react": "^19.2.3",
+    "satori": "^0.18.3"
+  }
+}

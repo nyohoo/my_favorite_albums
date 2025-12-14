@@ -1,0 +1,25 @@
+name = "my-favorite-albums"
+main = "src/index.ts"
+compatibility_date = "2025-01-20"
+compatibility_flags = ["nodejs_compat"]
+
+# D1 Database設定
+[[d1_databases]]
+binding = "DB"
+database_name = "my-favorite-albums"
+database_id = "" # 初回デプロイ後に自動生成される
+
+# 環境変数の設定例（必要に応じて追加）
+# [vars]
+# ENVIRONMENT = "development"
+
+# KV Namespaceの設定例（必要に応じて追加）
+# [[kv_namespaces]]
+# binding = "CACHE"
+# id = ""
+
+# R2 Bucketの設定例（必要に応じて追加）
+# [[r2_buckets]]
+# binding = "ASSETS"
+# bucket_name = "my-favorite-albums-assets"
+
