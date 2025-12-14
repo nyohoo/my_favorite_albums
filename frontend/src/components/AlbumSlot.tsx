@@ -2,6 +2,7 @@ import { Plus, X, GripVertical } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useSortable } from '@dnd-kit/sortable';
+import { useDroppable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
 import type { Album } from './AlbumGrid';
 
@@ -23,7 +24,7 @@ export function AlbumSlot({
   const {
     attributes,
     listeners,
-    setNodeRef,
+    setNodeRef: setSortableRef,
     transform,
     transition,
     isDragging,
@@ -32,6 +33,23 @@ export function AlbumSlot({
     disabled: !album, // 空のスロットはドラッグ不可
     animateLayoutChanges: () => false, // レイアウト変更のアニメーションを無効化
   });
+
+  const {
+    setNodeRef: setDroppableRef,
+    isOver,
+  } = useDroppable({
+    id: `album-${index}`,
+    disabled: false, // 空のスロットもドロップ可能
+  });
+
+  // 空のスロットの場合はdroppable、選択済みの場合はsortableのrefを使用
+  const setNodeRef = (node: HTMLElement | null) => {
+    if (album) {
+      setSortableRef(node);
+    } else {
+      setDroppableRef(node);
+    }
+  };
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -42,8 +60,11 @@ export function AlbumSlot({
 
   if (!album) {
     return (
-      <div className="aspect-square">
-        <Card className="h-full border-2 border-dashed border-muted-foreground/30 hover:border-primary/50 transition-colors cursor-pointer">
+      <div
+        ref={setDroppableRef}
+        className="aspect-square"
+      >
+        <Card className={`h-full border-2 border-dashed transition-colors cursor-pointer ${isOver ? 'border-primary bg-primary/10' : 'border-muted-foreground/30 hover:border-primary/50'}`}>
           <CardContent className="h-full flex items-center justify-center p-0">
             <Button
               variant="ghost"
