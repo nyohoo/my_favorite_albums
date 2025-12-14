@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { getDb } from './db';
-import { posts, postAlbums, albums } from './db/schema';
+import { posts, postAlbums, albums, users } from './db/schema';
 import { eq, asc, inArray } from 'drizzle-orm';
 import { generateVibeCard } from './utils/vibe-card';
 import { searchAlbums } from './services/spotify';
@@ -223,6 +223,152 @@ app.get('/api/search', async (c) => {
     return c.json(
       { 
         error: 'Failed to search albums',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    );
+  }
+});
+
+// 投稿作成
+// POST /api/posts
+app.post('/api/posts', async (c) => {
+  try {
+    const body = await c.req.json<{
+      userName: string;
+      title?: string;
+      albums: Array<{
+        spotifyId: string;
+        name: string;
+        artist: string;
+        imageUrl: string;
+        releaseDate?: string;
+        spotifyUrl?: string;
+      }>;
+    }>();
+
+    // バリデーション
+    if (!body.userName || body.userName.trim().length === 0) {
+      return c.json({ error: 'userName is required' }, 400);
+    }
+
+    if (!body.albums || !Array.isArray(body.albums) || body.albums.length === 0) {
+      return c.json({ error: 'albums array is required and must not be empty' }, 400);
+    }
+
+    if (body.albums.length > 9) {
+      return c.json({ error: 'albums array must contain at most 9 items' }, 400);
+    }
+
+    const db = getDb(c.env.DB);
+
+    // トランザクション内で処理
+    const result = await db.transaction(async (tx) => {
+      // 1. User処理: 同名なら既存、なければ新規作成
+      let user = await tx
+        .select()
+        .from(users)
+        .where(eq(users.name, body.userName))
+        .limit(1)
+        .get();
+
+      if (!user) {
+        const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+        const now = new Date();
+        await tx.insert(users).values({
+          id: userId,
+          name: body.userName,
+          createdAt: now,
+          updatedAt: now,
+        });
+        user = await tx
+          .select()
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1)
+          .get();
+      }
+
+      if (!user) {
+        throw new Error('Failed to create or retrieve user');
+      }
+
+      // 2. Post作成
+      const postId = `post_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+      const now = new Date();
+      await tx.insert(posts).values({
+        id: postId,
+        userId: user.id,
+        title: body.title || null,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      // 3. Album Upsert処理
+      const albumIds: string[] = [];
+      for (const albumData of body.albums) {
+        // spotify_idで検索
+        let album = await tx
+          .select()
+          .from(albums)
+          .where(eq(albums.spotifyId, albumData.spotifyId))
+          .limit(1)
+          .get();
+
+        if (!album) {
+          // 新規作成
+          const albumId = `album_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          await tx.insert(albums).values({
+            id: albumId,
+            spotifyId: albumData.spotifyId,
+            name: albumData.name,
+            artist: albumData.artist,
+            imageUrl: albumData.imageUrl,
+            releaseDate: albumData.releaseDate || null,
+            spotifyUrl: albumData.spotifyUrl || null,
+            createdAt: now,
+            updatedAt: now,
+          });
+          album = await tx
+            .select()
+            .from(albums)
+            .where(eq(albums.id, albumId))
+            .limit(1)
+            .get();
+        }
+
+        if (!album) {
+          throw new Error(`Failed to create or retrieve album: ${albumData.spotifyId}`);
+        }
+
+        albumIds.push(album.id);
+      }
+
+      // 4. Link作成: post_albumsにposition付きで保存
+      for (let i = 0; i < albumIds.length; i++) {
+        const postAlbumId = `post_album_${Date.now()}_${i}_${Math.random().toString(36).substring(2, 9)}`;
+        await tx.insert(postAlbums).values({
+          id: postAlbumId,
+          postId: postId,
+          albumId: albumIds[i],
+          position: i + 1, // 1-9の位置
+          createdAt: now,
+        });
+      }
+
+      return { postId, userId: user.id };
+    });
+
+    return c.json({
+      success: true,
+      id: result.postId,
+      userId: result.userId,
+    });
+  } catch (error) {
+    console.error('Error creating post:', error);
+    return c.json(
+      {
+        error: 'Failed to create post',
         message: error instanceof Error ? error.message : 'Unknown error',
       },
       500
