@@ -38,6 +38,7 @@ yarn-error.log*
 # Old Directories
 /old_backend/
 /old_front/
+/old_nuxt/
 
 # Frontend
 frontend/node_modules/
