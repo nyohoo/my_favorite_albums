@@ -4,6 +4,7 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 
@@ -27,9 +28,15 @@ export function SpotifyPlayer({
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md sm:max-w-lg p-0 bg-transparent border-none shadow-none">
+        <DialogHeader className="sr-only">
+          <DialogTitle>Spotifyプレーヤー</DialogTitle>
+          <DialogDescription>
+            {embedType === 'album' ? 'アルバム' : 'アーティスト'}のSpotifyプレーヤー
+          </DialogDescription>
+        </DialogHeader>
         <div className="bg-background/95 rounded-lg p-4 space-y-3 animate-in fade-in duration-300">
           {/* ヘッダー */}
-          <DialogHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+          <div className="flex flex-row items-center justify-between pb-2">
             <div className="flex items-center gap-2">
               <AlertCircle className="h-4 w-4 text-primary" />
               <span className="text-xs text-muted-foreground">音量注意</span>
@@ -39,10 +46,11 @@ export function SpotifyPlayer({
               size="icon"
               onClick={onClose}
               className="h-6 w-6 rounded-full hover:bg-destructive/10"
+              aria-label="プレーヤーを閉じる"
             >
               <X className="h-4 w-4 text-destructive" />
             </Button>
-          </DialogHeader>
+          </div>
 
           {/* Spotify埋め込みプレーヤー */}
           <div className="w-full">
