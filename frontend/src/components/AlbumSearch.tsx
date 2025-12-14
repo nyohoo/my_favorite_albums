@@ -47,9 +47,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
       setLoading(true);
       setError(null);
       try {
-        console.log('検索開始:', query);
         const data = await searchAlbums(query);
-        console.log('検索結果:', data);
         setResults(
           data.albums.map((album) => ({
             spotifyId: album.spotifyId,
@@ -93,9 +91,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
           placeholder="アルバム名やアーティスト名で検索..."
           value={query}
           onChange={(e) => {
-            const newValue = e.target.value;
-            console.log('入力値変更:', newValue);
-            setQuery(newValue);
+            setQuery(e.target.value);
           }}
           className="pl-10 text-foreground relative z-0"
           autoFocus={isOpen}
