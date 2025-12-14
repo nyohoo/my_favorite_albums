@@ -46,13 +46,24 @@ function App() {
           setSelectedHashtag(parsed.hashtag);
         }
         if (parsed.albums && Array.isArray(parsed.albums)) {
-          // 9個のスロットに配置
+          // 9個のスロットに配置（位置情報を保持）
           const newAlbums: (Album | null)[] = Array(9).fill(null);
-          parsed.albums.forEach((album: Album, index: number) => {
-            if (index < 9) {
-              newAlbums[index] = album;
-            }
-          });
+          // 保存されたデータに位置情報が含まれている場合はそれを使用
+          if (parsed.albumsWithPositions && Array.isArray(parsed.albumsWithPositions)) {
+            // 位置情報付きで保存されている場合
+            parsed.albumsWithPositions.forEach((item: { album: Album; position: number }) => {
+              if (item.position >= 0 && item.position < 9) {
+                newAlbums[item.position] = item.album;
+              }
+            });
+          } else {
+            // 旧形式のデータ（位置情報なし）の場合は、詰めて配置
+            parsed.albums.forEach((album: Album, index: number) => {
+              if (index < 9) {
+                newAlbums[index] = album;
+              }
+            });
+          }
           setAlbums(newAlbums);
         }
       } catch (e) {
@@ -113,11 +124,19 @@ function App() {
   };
 
   const saveToLocalStorage = (albumsToSave: (Album | null)[]) => {
+    // 位置情報を保持して保存
+    const albumsWithPositions = albumsToSave
+      .map((album, index) => ({ album, position: index }))
+      .filter((item): item is { album: Album; position: number } => item.album !== null);
+    
+    // 後方互換性のため、旧形式も保存
     const selectedAlbums = albumsToSave.filter((album): album is Album => album !== null);
+    
     localStorage.setItem(
       'albums',
       JSON.stringify({
-        albums: selectedAlbums,
+        albums: selectedAlbums, // 旧形式（後方互換性のため）
+        albumsWithPositions, // 新形式（位置情報付き）
         hashtag: selectedHashtag,
       })
     );
