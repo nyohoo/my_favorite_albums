@@ -96,10 +96,10 @@ export function AlbumSlot({
     >
       <Card className={`relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''}`}>
         <CardContent 
-          className="p-0 h-full relative"
+          className="p-0 h-full relative touch-none"
           {...attributes}
           {...listeners}
-          style={{ cursor: album ? 'grab' : 'default' }}
+          style={{ cursor: album ? 'grab' : 'default', WebkitTouchCallout: 'none' }}
         >
           {/* ドラッグハンドル（常に表示） */}
           {album && (

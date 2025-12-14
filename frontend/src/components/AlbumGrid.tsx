@@ -72,7 +72,9 @@ export function AlbumGrid({
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
-        distance: 10, // 10px移動してからドラッグ開始（誤タップ防止）
+        distance: 8, // 8px移動してからドラッグ開始（誤タップ防止）
+        // タッチ操作では距離制約を緩和
+        tolerance: 5,
       },
     }),
     useSensor(KeyboardSensor, {
