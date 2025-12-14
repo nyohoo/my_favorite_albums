@@ -62,15 +62,34 @@
 
 ## ■開発コマンド
 
-### セットアップ
+### バックエンド
+
+#### セットアップ
 ```bash
 npm install
 ```
 
-### ローカル開発
+#### ローカル開発
 ```bash
 npm run dev
 ```
+
+### フロントエンド
+
+#### セットアップ
+```bash
+cd frontend
+npm install
+```
+
+#### ローカル開発
+```bash
+cd frontend
+npm run dev
+```
+
+フロントエンドは `http://localhost:5173` で起動します。
+バックエンドが `http://localhost:8787` で起動している必要があります。
 
 ### デプロイ
 ```bash
@@ -181,3 +200,4 @@ npx wrangler secret put SPOTIFY_CLIENT_SECRET
 - [ ] 投稿作成・編集・削除機能
 - [ ] フロントエンド実装
 - [ ] 画像ダウンロード機能の最適化
+
