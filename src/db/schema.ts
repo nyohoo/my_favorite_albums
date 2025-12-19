@@ -17,6 +17,7 @@ export const albums = sqliteTable('albums', {
   imageUrl: text('image_url').notNull(),
   releaseDate: text('release_date'),
   spotifyUrl: text('spotify_url'),
+  artistId: text('artist_id'),
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
