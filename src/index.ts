@@ -1,10 +1,11 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
+import { Resvg } from '@resvg/resvg-wasm';
 import { getDb } from './db';
 import { posts, postAlbums, albums, users } from './db/schema';
-import { eq, asc, inArray } from 'drizzle-orm';
-import { generateVibeCard } from './utils/vibe-card';
+import { eq, asc, desc, inArray } from 'drizzle-orm';
+import { generateVibeCard, generateVibeCardSVG } from './utils/vibe-card';
 import { searchAlbums } from './services/spotify';
 
 type Bindings = {
@@ -37,7 +38,17 @@ app.get('/api/vibe-card', async (c) => {
     const postId = c.req.query('postId');
     
     if (!postId) {
-      return c.json({ error: 'postId is required' }, 400);
+      // エラー時もSVG画像を返す（プレースホルダー）
+      const errorSvg = `<svg width="900" height="900" xmlns="http://www.w3.org/2000/svg">
+        <rect width="900" height="900" fill="#1a1a1a"/>
+        <text x="450" y="450" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">postId is required</text>
+      </svg>`;
+      return new Response(errorSvg, {
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Cache-Control': 'no-cache',
+        },
+      });
     }
 
     const db = getDb(c.env.DB);
@@ -46,7 +57,17 @@ app.get('/api/vibe-card', async (c) => {
     const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1).get();
     
     if (!post) {
-      return c.json({ error: 'Post not found' }, 404);
+      // エラー時もSVG画像を返す（プレースホルダー）
+      const errorSvg = `<svg width="900" height="900" xmlns="http://www.w3.org/2000/svg">
+        <rect width="900" height="900" fill="#1a1a1a"/>
+        <text x="450" y="450" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">Post not found</text>
+      </svg>`;
+      return new Response(errorSvg, {
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Cache-Control': 'no-cache',
+        },
+      });
     }
 
     // 投稿に紐づくアルバムを取得（position順）
@@ -57,17 +78,15 @@ app.get('/api/vibe-card', async (c) => {
       .orderBy(asc(postAlbums.position))
       .all();
 
-    if (postAlbumRelations.length === 0) {
-      return c.json({ error: 'No albums found for this post' }, 404);
-    }
-
     // アルバム詳細を取得
     const albumIds = postAlbumRelations.map((pa) => pa.albumId);
-    const albumList = await db
-      .select()
-      .from(albums)
-      .where(inArray(albums.id, albumIds))
-      .all();
+    const albumList = albumIds.length > 0
+      ? await db
+          .select()
+          .from(albums)
+          .where(inArray(albums.id, albumIds))
+          .all()
+      : [];
 
     // position順にソート
     const sortedAlbums = postAlbumRelations
@@ -77,16 +96,168 @@ app.get('/api/vibe-card', async (c) => {
     // 最大9枚まで
     const albumsToShow = sortedAlbums.slice(0, 9);
 
-    // 画像を生成
-    const imageResponse = await generateVibeCard({
-      albums: albumsToShow,
-      title: post.title || 'My Favorite Albums',
-    });
+    // DBに保存されたSVGがある場合はそれを使用、なければ動的生成
+    let svg: string;
+    if (post.imageSvg && post.imageSvg.trim().length > 0) {
+      svg = post.imageSvg;
+    } else {
+      // フォールバック: 動的にSVGを生成
+      if (albumsToShow.length === 0) {
+        // アルバムがない場合のエラーSVG
+        const errorSvg = `<svg width="900" height="900" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="900" fill="#1a1a1a"/>
+          <text x="450" y="450" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">No albums found</text>
+        </svg>`;
+        return new Response(errorSvg, {
+          headers: {
+            'Content-Type': 'image/svg+xml',
+            'Cache-Control': 'no-cache',
+          },
+        });
+      }
+      
+      try {
+        svg = await generateVibeCardSVG({
+          albums: albumsToShow,
+          title: post.title || 'My Favorite Albums',
+        });
+      } catch (svgError) {
+        console.error('Error generating SVG:', svgError);
+        // SVG生成エラー時もエラーSVGを返す
+        const errorSvg = `<svg width="900" height="900" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="900" fill="#1a1a1a"/>
+          <text x="450" y="450" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">Failed to generate image</text>
+        </svg>`;
+        return new Response(errorSvg, {
+          headers: {
+            'Content-Type': 'image/svg+xml',
+            'Cache-Control': 'no-cache',
+          },
+        });
+      }
+    }
 
-    return imageResponse;
+    // SVGをPNGに変換（要件ではJPGとあるが、まずはPNGで動作確認）
+    try {
+      const resvg = new Resvg(svg, {
+        font: {
+          loadSystemFonts: false,
+        },
+      });
+      const pngData = resvg.render();
+      const pngBuffer = pngData.asPng();
+
+      return new Response(pngBuffer, {
+        headers: {
+          'Content-Type': 'image/png',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    } catch (error) {
+      console.error('Error converting SVG to PNG:', error);
+      // フォールバック: SVGを直接返す
+      return new Response(svg, {
+        headers: {
+          'Content-Type': 'image/svg+xml',
+          'Cache-Control': 'public, max-age=31536000, immutable',
+        },
+      });
+    }
   } catch (error) {
     console.error('Error generating vibe card:', error);
-    return c.json({ error: 'Failed to generate vibe card' }, 500);
+    // エラー時もSVG画像を返す（プレースホルダー）
+    const errorSvg = `<svg width="900" height="900" xmlns="http://www.w3.org/2000/svg">
+      <rect width="900" height="900" fill="#1a1a1a"/>
+      <text x="450" y="450" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">Failed to generate vibe card</text>
+    </svg>`;
+    return new Response(errorSvg, {
+      headers: {
+        'Content-Type': 'image/svg+xml',
+        'Cache-Control': 'no-cache',
+      },
+    });
+  }
+});
+
+// デバッグ用エンドポイント: SVG生成のテスト
+app.get('/api/debug/svg-test', async (c) => {
+  try {
+    console.log('=== SVG Generation Test Start ===');
+    
+    // モックアルバムデータ
+    const mockAlbums = [
+      {
+        id: 'test-1',
+        spotifyId: 'test-1',
+        name: 'Test Album 1',
+        artist: 'Test Artist 1',
+        imageUrl: 'https://picsum.photos/300/300?random=1',
+        releaseDate: '2024-01-01',
+        spotifyUrl: 'https://open.spotify.com/album/1',
+        artistId: null,
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      },
+    ];
+
+    console.log('1. Mock albums created:', mockAlbums.length);
+    
+    // フォント読み込みテスト
+    console.log('2. Testing font loading...');
+    let fontLoaded = false;
+    try {
+      const { generateVibeCardSVG } = await import('./utils/vibe-card');
+      fontLoaded = true;
+      console.log('2.1. Font loading module imported');
+    } catch (e) {
+      console.error('2.1. Failed to import module:', e);
+      return c.json({ error: 'Failed to import module', details: String(e) }, 500);
+    }
+
+    // SVG生成テスト
+    console.log('3. Testing SVG generation...');
+    try {
+      const { generateVibeCardSVG } = await import('./utils/vibe-card');
+      const svg = await generateVibeCardSVG({
+        albums: mockAlbums,
+        title: 'Test Title',
+        userName: 'Test User',
+      });
+      
+      console.log('3.1. SVG generated, length:', svg.length);
+      console.log('3.2. SVG preview (first 200 chars):', svg.substring(0, 200));
+      
+      if (!svg || svg.trim().length === 0) {
+        return c.json({ error: 'SVG is empty' }, 500);
+      }
+      
+      if (!svg.startsWith('<svg')) {
+        return c.json({ 
+          error: 'SVG is invalid', 
+          preview: svg.substring(0, 500) 
+        }, 500);
+      }
+      
+      return c.json({
+        success: true,
+        svgLength: svg.length,
+        svgPreview: svg.substring(0, 500),
+      });
+    } catch (svgError) {
+      console.error('3.1. SVG generation failed:', svgError);
+      return c.json({
+        error: 'SVG generation failed',
+        message: svgError instanceof Error ? svgError.message : String(svgError),
+        stack: svgError instanceof Error ? svgError.stack : undefined,
+      }, 500);
+    }
+  } catch (error) {
+    console.error('Debug test failed:', error);
+    return c.json({
+      error: 'Debug test failed',
+      message: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    }, 500);
   }
 });
 
@@ -103,6 +274,7 @@ app.get('/api/vibe-card/test', async (c) => {
       imageUrl: `https://picsum.photos/300/300?random=${i + 1}`,
       releaseDate: '2024-01-01',
       spotifyUrl: `https://open.spotify.com/album/${i + 1}`,
+      artistId: null,
       createdAt: new Date(),
       updatedAt: new Date(),
     }));
@@ -131,6 +303,7 @@ app.get('/api/posts', async (c) => {
     const postList = await db
       .select()
       .from(posts)
+      .orderBy(desc(posts.createdAt))
       .limit(limit)
       .offset(offset)
       .all();
@@ -248,9 +421,8 @@ app.post('/api/posts', async (c) => {
     }>();
 
     // バリデーション
-    if (!body.userName || body.userName.trim().length === 0) {
-      return c.json({ error: 'userName is required' }, 400);
-    }
+    // userNameは任意（空文字列も許可）
+    const userName = body.userName?.trim() || '';
 
     if (!body.albums || !Array.isArray(body.albums) || body.albums.length === 0) {
       return c.json({ error: 'albums array is required and must not be empty' }, 400);
@@ -266,28 +438,57 @@ app.post('/api/posts', async (c) => {
     // 本番環境ではトランザクションを使用することを推奨
     try {
       // 1. User処理: 同名なら既存、なければ新規作成
-      let user = await db
-        .select()
-        .from(users)
-        .where(eq(users.name, body.userName))
-        .limit(1)
-        .get();
-
-      if (!user) {
-        const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
-        const now = new Date();
-        await db.insert(users).values({
-          id: userId,
-          name: body.userName,
-          createdAt: now,
-          updatedAt: now,
-        });
+      // userNameが空の場合は匿名ユーザーとして扱う
+      let user = null;
+      if (userName) {
         user = await db
           .select()
           .from(users)
-          .where(eq(users.id, userId))
+          .where(eq(users.name, userName))
           .limit(1)
           .get();
+
+        if (!user) {
+          const userId = `user_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
+          const now = new Date();
+          await db.insert(users).values({
+            id: userId,
+            name: userName,
+            createdAt: now,
+            updatedAt: now,
+          });
+          user = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, userId))
+            .limit(1)
+            .get();
+        }
+      } else {
+        // 匿名ユーザーの場合は、固定の匿名ユーザーIDを使用
+        const anonymousUserId = 'user_anonymous';
+        user = await db
+          .select()
+          .from(users)
+          .where(eq(users.id, anonymousUserId))
+          .limit(1)
+          .get();
+
+        if (!user) {
+          const now = new Date();
+          await db.insert(users).values({
+            id: anonymousUserId,
+            name: '',
+            createdAt: now,
+            updatedAt: now,
+          });
+          user = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, anonymousUserId))
+            .limit(1)
+            .get();
+        }
       }
 
       if (!user) {
@@ -355,6 +556,97 @@ app.post('/api/posts', async (c) => {
           position: i + 1, // 1-9の位置
           createdAt: now,
         });
+      }
+
+      // 5. Vibe Card SVG生成と保存
+      try {
+        // アルバム詳細を取得（position順）
+        const savedAlbums = await Promise.all(
+          albumIds.map(async (albumId) => {
+            const album = await db
+              .select()
+              .from(albums)
+              .where(eq(albums.id, albumId))
+              .limit(1)
+              .get();
+            return album;
+          })
+        );
+
+        const validAlbums = savedAlbums.filter((a): a is NonNullable<typeof a> => a !== null);
+
+        if (validAlbums.length === 0) {
+          console.error('No valid albums found for SVG generation');
+          // アルバムがない場合はエラーSVGを保存
+          const errorSvg = `<svg width="900" height="900" xmlns="http://www.w3.org/2000/svg">
+            <rect width="900" height="900" fill="#1a1a1a"/>
+            <text x="450" y="450" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">No albums found</text>
+          </svg>`;
+          await db
+            .update(posts)
+            .set({ imageSvg: errorSvg, updatedAt: now })
+            .where(eq(posts.id, postId));
+        } else {
+          // ユーザー名を取得（既にuserオブジェクトがあるので、そのnameを使用）
+          const userNameForSvg = user.name || undefined;
+
+          // SVGを生成
+          console.log(`Generating SVG for post ${postId} with ${validAlbums.length} albums`);
+          const svg = await generateVibeCardSVG({
+            albums: validAlbums,
+            title: body.title || undefined,
+            userName: userNameForSvg,
+          });
+
+          // SVGの内容を検証
+          if (!svg || svg.trim().length === 0) {
+            console.error('Generated SVG is empty');
+            throw new Error('Generated SVG is empty');
+          }
+
+          if (!svg.startsWith('<svg')) {
+            console.error('Generated SVG does not start with <svg tag');
+            console.error('SVG preview (first 200 chars):', svg.substring(0, 200));
+            throw new Error('Generated SVG is invalid');
+          }
+
+          console.log(`SVG generated successfully, length: ${svg.length} characters`);
+
+          // DBにSVGを保存
+          await db
+            .update(posts)
+            .set({ imageSvg: svg, updatedAt: now })
+            .where(eq(posts.id, postId));
+          
+          console.log(`SVG saved to database for post ${postId}`);
+        }
+      } catch (svgError) {
+        console.error('Error generating SVG:', svgError);
+        console.error('Error details:', {
+          postId,
+          albumCount: albumIds.length,
+          errorMessage: svgError instanceof Error ? svgError.message : String(svgError),
+          errorStack: svgError instanceof Error ? svgError.stack : undefined,
+        });
+        
+        // SVG生成エラー時もエラーSVGを保存（画像が表示されない問題を防ぐ）
+        const errorSvg = `<svg width="900" height="900" xmlns="http://www.w3.org/2000/svg">
+          <rect width="900" height="900" fill="#1a1a1a"/>
+          <text x="450" y="400" font-family="Arial" font-size="24" fill="#ffffff" text-anchor="middle">Failed to generate image</text>
+          <text x="450" y="450" font-family="Arial" font-size="16" fill="#ffffff" text-anchor="middle" opacity="0.7">${svgError instanceof Error ? svgError.message.substring(0, 50) : 'Unknown error'}</text>
+        </svg>`;
+        
+        try {
+          await db
+            .update(posts)
+            .set({ imageSvg: errorSvg, updatedAt: now })
+            .where(eq(posts.id, postId));
+          console.log(`Error SVG saved to database for post ${postId}`);
+        } catch (dbError) {
+          console.error('Failed to save error SVG to database:', dbError);
+        }
+        
+        // SVG生成エラーは無視して投稿は成功とする（既存の動作を維持）
       }
 
       const result = { postId, userId: user.id };

@@ -8,6 +8,13 @@
       "when": 1765673144715,
       "tag": "0000_opposite_xorn",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1766166035475,
+      "tag": "0001_add_image_svg_to_posts",
+      "breakpoints": true
     }
   ]
 }
