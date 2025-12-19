@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Header } from '@/components/Header';
 import {
@@ -29,6 +30,7 @@ const HASHTAGS = [
 ];
 
 function App() {
+  const navigate = useNavigate();
   const [albums, setAlbums] = useState<(Album | null)[]>(Array(9).fill(null));
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
@@ -171,13 +173,15 @@ function App() {
       });
 
       console.log('投稿作成成功:', result);
-      alert(`投稿を作成しました！\nPost ID: ${result.id}`);
 
       // リセット
       setAlbums(Array(9).fill(null));
       setUserName('');
       setTitle('');
       localStorage.removeItem('albums');
+
+      // 詳細画面に遷移
+      navigate(`/posts/${result.id}`);
     } catch (error) {
       console.error('投稿作成エラー:', error);
       alert(`エラー: ${error instanceof Error ? error.message : '投稿の作成に失敗しました'}`);

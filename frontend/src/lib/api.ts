@@ -31,7 +31,7 @@ export async function searchAlbums(query: string): Promise<{
     spotifyUrl: string;
   }>;
 }> {
-  const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
+  const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
   
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: response.statusText }));

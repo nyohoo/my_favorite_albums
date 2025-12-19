@@ -26,9 +26,31 @@ export function SpotifyPlayer({
   onClose,
   onSelect,
 }: SpotifyPlayerProps) {
-  if (!spotifyId) return null;
+  console.log('SpotifyPlayer rendered with:', { spotifyId, embedType, album });
+  
+  if (!spotifyId) {
+    console.warn('SpotifyPlayer: spotifyId is empty', { spotifyId, album });
+    return null;
+  }
 
-  const embedUrl = `https://open.spotify.com/embed/${embedType}/${spotifyId}?utm_source=generator`;
+  // spotifyIdがURL形式（spotify:album:xxxxx や https://open.spotify.com/album/xxxxx）の場合はID部分を抽出
+  let extractedId = spotifyId;
+  if (spotifyId.includes('spotify:')) {
+    // spotify:album:xxxxx 形式の場合
+    const parts = spotifyId.split(':');
+    extractedId = parts[parts.length - 1];
+  } else if (spotifyId.includes('open.spotify.com')) {
+    // https://open.spotify.com/album/xxxxx 形式の場合
+    const match = spotifyId.match(/\/(album|artist)\/([a-zA-Z0-9]+)/);
+    if (match) {
+      extractedId = match[2];
+    }
+  }
+
+  console.log('SpotifyPlayer extractedId:', extractedId);
+
+  const embedUrl = `https://open.spotify.com/embed/${embedType}/${extractedId}?utm_source=generator`;
+  console.log('SpotifyPlayer embedUrl:', embedUrl);
 
   const handleSelect = () => {
     if (album && onSelect) {
