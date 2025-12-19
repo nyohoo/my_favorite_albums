@@ -31,7 +31,7 @@ export async function searchAlbums(query: string): Promise<{
     spotifyUrl: string;
   }>;
 }> {
-  const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
+  const response = await fetch(`${API_BASE_URL}/api/search?q=${encodeURIComponent(query)}`);
   
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ error: response.statusText }));
@@ -98,6 +98,7 @@ export async function getPost(id: string): Promise<{
     id: string;
     userId: string;
     title: string | null;
+    userName: string | null;
     createdAt: Date;
     updatedAt: Date;
   };
@@ -109,6 +110,7 @@ export async function getPost(id: string): Promise<{
     imageUrl: string;
     releaseDate: string | null;
     spotifyUrl: string | null;
+    artistId: string | null;
     createdAt: Date;
     updatedAt: Date;
   }>;

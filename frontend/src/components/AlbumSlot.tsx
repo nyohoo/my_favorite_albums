@@ -12,6 +12,7 @@ interface AlbumSlotProps {
   onAdd: () => void;
   onRemove: () => void;
   onReplace: () => void;
+  onClick?: () => void;
 }
 
 export function AlbumSlot({
@@ -20,6 +21,7 @@ export function AlbumSlot({
   onAdd,
   onRemove,
   onReplace,
+  onClick,
 }: AlbumSlotProps) {
   const {
     attributes,
@@ -94,12 +96,14 @@ export function AlbumSlot({
       style={style}
       className={`aspect-square ${isDragging ? 'cursor-grabbing' : ''}`}
     >
-      <Card className={`relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''}`}>
+      <Card 
+        className={`relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''} ${onClick ? 'cursor-pointer' : ''}`}
+        onClick={onClick}
+      >
         <CardContent 
           className="p-0 h-full relative touch-none"
-          {...attributes}
-          {...listeners}
-          style={{ cursor: album ? 'grab' : 'default', WebkitTouchCallout: 'none' }}
+          {...(onClick ? {} : { ...attributes, ...listeners })}
+          style={{ cursor: onClick ? 'pointer' : (album ? 'grab' : 'default'), WebkitTouchCallout: 'none' }}
         >
           {/* ドラッグハンドル（常に表示） */}
           {album && (

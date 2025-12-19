@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { Music } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Header } from '@/components/Header';
 import {
   Dialog,
   DialogContent,
@@ -163,14 +163,9 @@ function App() {
       return;
     }
 
-    if (!userName.trim()) {
-      alert('ユーザー名を入力してください');
-      return;
-    }
-
     try {
       const result = await createPost({
-        userName: userName.trim(),
+        userName: userName.trim() || '', // 空欄の場合は空文字列を送信
         title: title.trim() || selectedHashtag,
         albums: selectedAlbums,
       });
@@ -190,33 +185,27 @@ function App() {
   };
 
   const selectedCount = albums.filter((album): album is Album => album !== null).length;
-  const canCreate = selectedCount > 0 && userName.trim().length > 0;
+  const canCreate = selectedCount > 0;
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
         {/* ヘッダー */}
-        <div className="mb-6 sm:mb-8 text-center">
-          <div className="flex items-center justify-center gap-2 mb-2">
-            <Music className="h-6 w-6 sm:h-8 sm:w-8 text-primary" />
-            <h1 className="text-3xl sm:text-4xl font-bold">MyFavoriteAlbums</h1>
-          </div>
-          <p className="text-sm sm:text-base text-muted-foreground">
-            あなたの好きな9枚のアルバムを選んでシェアしましょう
-          </p>
-        </div>
+        <Header
+          subtitle="あなたの好きな9枚のアルバムを選んでシェアしましょう"
+        />
 
         {/* 入力フィールド */}
         <div className="mb-6 sm:mb-8 space-y-4">
           <div>
             <label className="block text-sm font-medium mb-2">
-              ユーザー名 <span className="text-destructive">*</span>
+              ユーザー名（任意）
             </label>
             <input
               type="text"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
-              placeholder="あなたの名前"
+              placeholder="あなたの名前（任意）"
               className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>

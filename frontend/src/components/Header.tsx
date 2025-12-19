@@ -1,9 +1,10 @@
 import { Link, useLocation } from 'react-router-dom';
 import { Music, ArrowLeft } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 interface HeaderProps {
   title?: string;
-  subtitle?: string;
+  subtitle?: string | ReactNode;
   showBackButton?: boolean;
 }
 

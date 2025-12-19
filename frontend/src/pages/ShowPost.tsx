@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Music, Loader2, Share2, Download, ArrowLeft, Calendar } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Loader2, Share2, Download, Calendar, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlbumGrid, type Album } from '@/components/AlbumGrid';
 import { SpotifyPlayer } from '@/components/SpotifyPlayer';
@@ -421,7 +421,7 @@ export function ShowPost() {
           <div className="space-y-6 sm:space-y-8">
             {albums
               .filter((album): album is Album => album !== null)
-              .map((album, index) => (
+              .map((album) => (
                 <div key={album.spotifyId} className="border-b border-border pb-6 sm:pb-8 last:border-b-0">
                   <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start">
                     {/* アルバム画像 */}

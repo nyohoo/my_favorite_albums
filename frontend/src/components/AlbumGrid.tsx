@@ -21,6 +21,7 @@ export interface Album {
   imageUrl: string;
   releaseDate?: string;
   spotifyUrl?: string;
+  artistId?: string;
 }
 
 interface AlbumGridProps {
@@ -29,6 +30,8 @@ interface AlbumGridProps {
   onRemove: (index: number) => void;
   onReplace: (index: number) => void;
   onReorder: (fromIndex: number, toIndex: number) => void;
+  readonly?: boolean;
+  onAlbumClick?: (album: Album) => void;
 }
 
 import { AlbumSlot } from './AlbumSlot';
@@ -69,6 +72,8 @@ export function AlbumGrid({
   onRemove,
   onReplace,
   onReorder,
+  readonly = false,
+  onAlbumClick,
 }: AlbumGridProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -115,6 +120,25 @@ export function AlbumGrid({
 
   // すべてのスロット（空のスロットも含む）をドロップ先として認識できるようにする
   const sortableIds = albums.map((_, index) => `album-${index}`);
+
+  // readonlyモードの場合は、ドラッグ&ドロップを無効化
+  if (readonly) {
+    return (
+      <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+        {albums.map((album, index) => (
+          <AlbumSlot
+            key={index}
+            album={album}
+            index={index}
+            onAdd={() => {}}
+            onRemove={() => {}}
+            onReplace={() => {}}
+            onClick={album && onAlbumClick ? () => onAlbumClick(album) : undefined}
+          />
+        ))}
+      </div>
+    );
+  }
 
   return (
     <DndContext
