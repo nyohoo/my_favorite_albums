@@ -124,7 +124,7 @@ export function AlbumGrid({
   // readonlyモードの場合は、ドラッグ&ドロップを無効化
   if (readonly) {
     return (
-      <div className="grid grid-cols-3 gap-3 sm:gap-4 max-w-2xl mx-auto">
+      <div className="grid grid-cols-3 gap-0 max-w-2xl mx-auto">
         {albums.map((album, index) => (
           <AlbumSlot
             key={index}
@@ -134,6 +134,7 @@ export function AlbumGrid({
             onRemove={() => {}}
             onReplace={() => {}}
             onClick={album && onAlbumClick ? () => onAlbumClick(album) : undefined}
+            readonly={true}
           />
         ))}
       </div>
