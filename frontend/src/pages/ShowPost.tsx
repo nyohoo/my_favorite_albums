@@ -62,6 +62,12 @@ export function ShowPost() {
   const [playerType, setPlayerType] = useState<'album' | 'artist'>('album');
 
   const handleAlbumClick = (album: Album) => {
+    console.log('handleAlbumClick called with album:', album);
+    console.log('album.spotifyId:', album.spotifyId);
+    if (!album.spotifyId) {
+      console.error('handleAlbumClick: album.spotifyId is missing!', album);
+      return;
+    }
     setSelectedAlbum(album);
     setSelectedArtistId(null);
     setPlayerType('album');
@@ -183,15 +189,22 @@ export function ShowPost() {
         
         // APIから取得したアルバムデータをAlbum型に変換
         // APIは既にposition順にソートして返しているので、その順序を使用
-        const formattedAlbums: Album[] = data.albums.map((album) => ({
-          spotifyId: album.spotifyId,
-          name: album.name,
-          artist: album.artist,
-          artistId: album.artistId || undefined,
-          imageUrl: album.imageUrl,
-          releaseDate: album.releaseDate || undefined,
-          spotifyUrl: album.spotifyUrl || undefined,
-        }));
+        const formattedAlbums: Album[] = data.albums.map((album) => {
+          console.log('Formatting album:', { 
+            spotifyId: album.spotifyId, 
+            name: album.name,
+            rawAlbum: album 
+          });
+          return {
+            spotifyId: album.spotifyId,
+            name: album.name,
+            artist: album.artist,
+            artistId: album.artistId || undefined,
+            imageUrl: album.imageUrl,
+            releaseDate: album.releaseDate || undefined,
+            spotifyUrl: album.spotifyUrl || undefined,
+          };
+        });
         
         // 9個のスロットに配置（APIがposition順にソート済みなので、その順序を使用）
         const albumsWithPositions: (Album | null)[] = Array(9).fill(null);
@@ -399,19 +412,17 @@ export function ShowPost() {
         </div>
 
         {/* Spotifyプレーヤー */}
-        {(selectedAlbum || selectedArtistId) && (
-          <SpotifyPlayer
-            isOpen={playerOpen}
-            spotifyId={selectedAlbum?.spotifyId || selectedArtistId || ''}
-            embedType={playerType}
-            album={selectedAlbum || undefined}
-            onClose={() => {
-              setPlayerOpen(false);
-              setSelectedAlbum(null);
-              setSelectedArtistId(null);
-            }}
-          />
-        )}
+        <SpotifyPlayer
+          isOpen={playerOpen}
+          spotifyId={selectedAlbum?.spotifyId || selectedArtistId || ''}
+          embedType={playerType}
+          album={selectedAlbum || undefined}
+          onClose={() => {
+            setPlayerOpen(false);
+            setSelectedAlbum(null);
+            setSelectedArtistId(null);
+          }}
+        />
 
         {/* アルバム詳細リスト */}
         <div className="mt-12 sm:mt-16">

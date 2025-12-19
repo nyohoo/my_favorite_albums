@@ -27,6 +27,7 @@ export const posts = sqliteTable('posts', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
   title: text('title'),
+  imageSvg: text('image_svg'), // SVG画像をテキストで保存
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
 });
