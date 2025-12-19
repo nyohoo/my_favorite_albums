@@ -13,7 +13,7 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8787',
+        target: 'http://localhost:8788',
         changeOrigin: true,
         // rewriteを削除: バックエンドのエンドポイントは /api/* なので、そのまま転送
       },
