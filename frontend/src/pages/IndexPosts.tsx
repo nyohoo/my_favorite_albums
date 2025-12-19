@@ -129,14 +129,14 @@ export function IndexPosts() {
                   to={`/posts/${post.id}`}
                   className="block"
                 >
-                  <Card className="card-shadow cursor-pointer h-full overflow-hidden group bg-card">
+                  <Card className="card-shadow cursor-pointer h-full overflow-hidden group bg-card rounded-none">
                     <CardContent className="p-0">
                       {/* Vibe Card画像: フラット、角丸なし */}
                       <div className="aspect-square w-full bg-muted relative overflow-hidden">
                         <img
                           src={getVibeCardUrl(post.id)}
                           alt={post.title || '無題の投稿'}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover rounded-none"
                           loading="lazy"
                         />
                       </div>
