@@ -29,7 +29,8 @@ export function AlbumSlot({
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
   const rippleIdRef = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
-  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
+  const touchStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+  const touchMovedRef = useRef(false);
 
   const {
     attributes,
@@ -99,11 +100,30 @@ export function AlbumSlot({
     }
   };
 
-  // タッチ開始位置を記録
+  // タッチ開始位置と時刻を記録
   const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
     if (readonly && onClick) {
       const touch = event.touches[0];
-      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+      touchStartRef.current = { 
+        x: touch.clientX, 
+        y: touch.clientY,
+        time: Date.now()
+      };
+      touchMovedRef.current = false;
+    }
+  };
+
+  // タッチ移動を検出（スクロール判定用）
+  const handleTouchMove = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (readonly && onClick && touchStartRef.current) {
+      const touch = event.touches[0];
+      const moveX = Math.abs(touch.clientX - touchStartRef.current.x);
+      const moveY = Math.abs(touch.clientY - touchStartRef.current.y);
+      
+      // 5px以上移動したらスクロールと判断
+      if (moveX > 5 || moveY > 5) {
+        touchMovedRef.current = true;
+      }
     }
   };
 
@@ -113,9 +133,17 @@ export function AlbumSlot({
       const touch = event.changedTouches[0];
       const moveX = Math.abs(touch.clientX - touchStartRef.current.x);
       const moveY = Math.abs(touch.clientY - touchStartRef.current.y);
+      const touchDuration = Date.now() - touchStartRef.current.time;
       
-      // 10px以内の移動のみ反応（誤タッチ防止）
-      if (moveX < 10 && moveY < 10) {
+      // スクロールと判断された場合は処理しない
+      if (touchMovedRef.current) {
+        touchStartRef.current = null;
+        touchMovedRef.current = false;
+        return;
+      }
+      
+      // 8px以内の移動かつ300ms以内のタップのみ反応（誤タッチ防止、スクロール優先）
+      if (moveX < 8 && moveY < 8 && touchDuration < 300) {
         createRipple(event);
         // 少し遅延させてからonClickを実行（リップルが見えるように）
         setTimeout(() => {
@@ -124,6 +152,7 @@ export function AlbumSlot({
       }
       
       touchStartRef.current = null;
+      touchMovedRef.current = false;
     }
   };
 
@@ -206,7 +235,9 @@ export function AlbumSlot({
         className={`${cardClassName} relative overflow-hidden`}
         onClick={readonly && onClick ? handleClick : onClick}
         onTouchStart={readonly && onClick ? handleTouchStart : undefined}
+        onTouchMove={readonly && onClick ? handleTouchMove : undefined}
         onTouchEnd={readonly && onClick ? handleTouchEnd : undefined}
+        style={{ touchAction: readonly && onClick ? 'pan-y' : undefined }}
       >
         {/* リップルエフェクト */}
         {readonly && onClick && (
@@ -224,9 +255,13 @@ export function AlbumSlot({
           </div>
         )}
         <CardContent 
-          className="p-0 h-full relative touch-none"
+          className="p-0 h-full relative"
           {...(onClick ? (readonly ? {} : { onClick }) : { ...attributes, ...listeners })}
-          style={{ cursor: onClick ? 'pointer' : (album ? 'grab' : 'default'), WebkitTouchCallout: 'none' }}
+          style={{ 
+            cursor: onClick ? 'pointer' : (album ? 'grab' : 'default'), 
+            WebkitTouchCallout: 'none',
+            touchAction: readonly && onClick ? 'pan-y' : undefined
+          }}
         >
           {/* ドラッグハンドル（readonlyモードでは非表示） */}
           {album && !readonly && (
