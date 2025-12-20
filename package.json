@@ -5,9 +5,15 @@
   "main": "src/index.ts",
   "scripts": {
     "dev": "wrangler dev",
-    "deploy": "wrangler deploy",
+    "deploy": "npm run deploy:check && wrangler deploy",
+    "deploy:check": "npm run build:frontend && npm run db:check",
+    "deploy:backend": "wrangler deploy",
+    "deploy:frontend": "cd frontend && npm run build",
+    "build:frontend": "cd frontend && npm run build",
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "wrangler d1 migrations apply my-favorite-albums",
+    "db:migrate": "wrangler d1 migrations apply my-favorite-albums --remote",
+    "db:migrate:local": "wrangler d1 migrations apply my-favorite-albums --local",
+    "db:check": "echo 'Checking database migrations (remote)...' && wrangler d1 migrations list my-favorite-albums --remote",
     "db:studio": "drizzle-kit studio"
   },
   "keywords": [

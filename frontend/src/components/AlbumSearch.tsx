@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Loader2, Play, Plus } from 'lucide-react';
+import { Search, Play, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -111,8 +111,8 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
         />
       </div>
 
-      {/* 固定スペースを確保（ローディング表示時のみ表示） */}
-      <div className="h-8 flex items-center justify-center">
+      {/* 固定スペースを確保（ローディング表示時のみ表示、スマホでは非表示） */}
+      <div className="h-8 hidden sm:flex items-center justify-center">
         {showLoading && loading && (
           <div className="h-1 w-32 bg-muted rounded-full overflow-hidden">
             <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />

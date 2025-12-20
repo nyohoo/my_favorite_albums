@@ -26,7 +26,8 @@ export const albums = sqliteTable('albums', {
 export const posts = sqliteTable('posts', {
   id: text('id').primaryKey(),
   userId: text('user_id').notNull().references(() => users.id),
-  title: text('title'),
+  title: text('title'), // 後方互換性のため残す（将来的に削除予定）
+  hashtag: text('hashtag').notNull(), // ハッシュタグ（必須）
   imageSvg: text('image_svg'), // SVG画像をテキストで保存
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
   updatedAt: integer('updated_at', { mode: 'timestamp' }).notNull(),
@@ -39,6 +40,14 @@ export const postAlbums = sqliteTable('post_albums', {
   albumId: text('album_id').notNull().references(() => albums.id),
   position: integer('position').notNull(), // 1-9の位置
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+});
+
+// 短縮URLテーブル
+export const shortUrls = sqliteTable('short_urls', {
+  id: text('id').primaryKey(), // 短縮URLのID（例: "abc123"）
+  postId: text('post_id').notNull().references(() => posts.id),
+  createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
+  expiresAt: integer('expires_at', { mode: 'timestamp' }), // オプション: 有効期限
 });
 
 export type User = typeof users.$inferSelect;

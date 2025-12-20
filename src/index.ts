@@ -3,7 +3,7 @@ import { cors } from 'hono/cors';
 import { logger } from 'hono/logger';
 import { Resvg } from '@resvg/resvg-wasm';
 import { getDb } from './db';
-import { posts, postAlbums, albums, users } from './db/schema';
+import { posts, postAlbums, albums, users, shortUrls } from './db/schema';
 import { eq, asc, desc, inArray } from 'drizzle-orm';
 import { generateVibeCard, generateVibeCardSVG } from './utils/vibe-card';
 import { searchAlbums } from './services/spotify';
@@ -20,7 +20,49 @@ const app = new Hono<{ Bindings: Bindings; Variables: Variables }>();
 
 // ミドルウェア
 app.use('*', logger());
-app.use('*', cors());
+
+// CORS設定: 本番環境のオリジンを許可
+app.use('*', cors({
+  origin: (origin, c) => {
+    // 本番環境のオリジン（デフォルト）
+    const defaultAllowedOrigins = [
+      'https://my-favorite-albums.pages.dev', // Cloudflare PagesのデフォルトURL
+      // カスタムドメインを追加する場合はここに追加
+      // 'https://yourdomain.com',
+    ];
+    
+    // 環境変数から追加のオリジンを取得（wrangler.tomlのvarsまたはsecretで設定可能）
+    // 注意: Cloudflare Workersでは環境変数はc.envから取得
+    // ここではデフォルトのオリジンリストを使用
+    const allowedOrigins = defaultAllowedOrigins;
+    
+    // originがない場合（サーバーサイドリクエストなど）は許可
+    if (!origin) {
+      return '*';
+    }
+    
+    // 開発環境（localhost）は常に許可
+    if (origin.includes('localhost') || origin.includes('127.0.0.1')) {
+      return origin; // 実際のオリジンを返す
+    }
+    
+    // pages.devを含むオリジンは許可（プレビューURLも含む）
+    if (origin.includes('pages.dev')) {
+      return origin; // 実際のオリジンを返す
+    }
+    
+    // 本番環境では許可されたオリジンのみ
+    if (allowedOrigins.includes(origin)) {
+      return origin; // 実際のオリジンを返す
+    }
+    
+    // 許可されていないオリジンの場合はnullを返す（CORSエラー）
+    return null;
+  },
+  credentials: true,
+  allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // ヘルスチェック
 app.get('/', (c) => {
@@ -156,12 +198,13 @@ app.get('/api/vibe-card', async (c) => {
     } catch (error) {
       console.error('Error converting SVG to PNG:', error);
       // フォールバック: SVGを直接返す
-      return new Response(svg, {
-        headers: {
-          'Content-Type': 'image/svg+xml',
-          'Cache-Control': 'public, max-age=31536000, immutable',
-        },
-      });
+        return new Response(svg, {
+          headers: {
+            'Content-Type': 'image/svg+xml',
+            'Cache-Control': 'public, max-age=31536000, immutable',
+            'X-Content-Type-Options': 'nosniff',
+          },
+        });
     }
   } catch (error) {
     console.error('Error generating vibe card:', error);
@@ -327,6 +370,10 @@ app.get('/api/posts/:id', async (c) => {
       return c.json({ error: 'Post not found' }, 404);
     }
 
+    // ユーザー情報を取得
+    const user = await db.select().from(users).where(eq(users.id, post.userId)).limit(1).get();
+    const userName = user?.name || null;
+
     // 投稿に紐づくアルバムを取得
     const postAlbumRelations = await db
       .select()
@@ -350,7 +397,10 @@ app.get('/api/posts/:id', async (c) => {
       .filter((a): a is NonNullable<typeof a> => a !== undefined);
 
     return c.json({
-      post,
+      post: {
+        ...post,
+        userName,
+      },
       albums: sortedAlbums,
     });
   } catch (error) {
@@ -409,7 +459,7 @@ app.post('/api/posts', async (c) => {
   try {
     const body = await c.req.json<{
       userName: string;
-      title?: string;
+      hashtag: string; // ハッシュタグ（必須）
       albums: Array<{
         spotifyId: string;
         name: string;
@@ -423,6 +473,12 @@ app.post('/api/posts', async (c) => {
     // バリデーション
     // userNameは任意（空文字列も許可）
     const userName = body.userName?.trim() || '';
+
+    // ハッシュタグのバリデーション
+    if (!body.hashtag || typeof body.hashtag !== 'string' || body.hashtag.trim() === '') {
+      return c.json({ error: 'hashtag is required' }, 400);
+    }
+    const hashtag = body.hashtag.trim();
 
     if (!body.albums || !Array.isArray(body.albums) || body.albums.length === 0) {
       return c.json({ error: 'albums array is required and must not be empty' }, 400);
@@ -501,7 +557,8 @@ app.post('/api/posts', async (c) => {
       await db.insert(posts).values({
         id: postId,
         userId: user.id,
-        title: body.title || null,
+        title: null, // 後方互換性のためnullを設定（将来的に削除予定）
+        hashtag: hashtag,
         createdAt: now,
         updatedAt: now,
       });
@@ -670,6 +727,147 @@ app.post('/api/posts', async (c) => {
       },
       500
     );
+  }
+});
+
+// 短縮URL生成用の関数（ランダムな文字列を生成）
+function generateShortId(): string {
+  const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
+  }
+  return result;
+}
+
+// 短縮URL生成
+// POST /api/short-url
+app.post('/api/short-url', async (c) => {
+  try {
+    const body = await c.req.json();
+    const { postId } = body;
+
+    if (!postId) {
+      return c.json({ error: 'postId is required' }, 400);
+    }
+
+    const db = getDb(c.env.DB);
+
+    // 投稿が存在するか確認
+    const post = await db.select().from(posts).where(eq(posts.id, postId)).limit(1).get();
+    if (!post) {
+      return c.json({ error: 'Post not found' }, 404);
+    }
+
+    // 既存の短縮URLを確認
+    const existing = await db
+      .select()
+      .from(shortUrls)
+      .where(eq(shortUrls.postId, postId))
+      .limit(1)
+      .get();
+
+    if (existing) {
+      // 既存の短縮URLを返す
+      const shortUrl = `https://albums.albums.workers.dev/s/${existing.id}`;
+      return c.json({
+        shortId: existing.id,
+        shortUrl,
+      });
+    }
+
+    // 新しい短縮URLを生成（重複チェック）
+    let shortId: string;
+    let attempts = 0;
+    do {
+      shortId = generateShortId();
+      const duplicate = await db
+        .select()
+        .from(shortUrls)
+        .where(eq(shortUrls.id, shortId))
+        .limit(1)
+        .get();
+      if (!duplicate) break;
+      attempts++;
+      if (attempts > 10) {
+        return c.json({ error: 'Failed to generate unique short URL' }, 500);
+      }
+    } while (true);
+
+    // 短縮URLを保存
+    const now = new Date();
+    await db.insert(shortUrls).values({
+      id: shortId,
+      postId: postId,
+      createdAt: now,
+    });
+
+    const shortUrl = `https://albums.albums.workers.dev/s/${shortId}`;
+    return c.json({
+      shortId,
+      shortUrl,
+    });
+  } catch (error) {
+    console.error('Error creating short URL:', error);
+    return c.json(
+      {
+        error: 'Failed to create short URL',
+        message: error instanceof Error ? error.message : 'Unknown error',
+      },
+      500
+    );
+  }
+});
+
+// 短縮URLリダイレクト
+// GET /s/:shortId
+app.get('/s/:shortId', async (c) => {
+  try {
+    const shortId = c.req.param('shortId');
+    const db = getDb(c.env.DB);
+
+    const shortUrl = await db
+      .select()
+      .from(shortUrls)
+      .where(eq(shortUrls.id, shortId))
+      .limit(1)
+      .get();
+
+    if (!shortUrl) {
+      return c.html(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <meta charset="UTF-8">
+          <title>短縮URLが見つかりません</title>
+          <meta http-equiv="refresh" content="3;url=https://my-favorite-albums.pages.dev">
+        </head>
+        <body>
+          <h1>短縮URLが見つかりません</h1>
+          <p>3秒後にトップページにリダイレクトします...</p>
+        </body>
+        </html>
+      `, 404);
+    }
+
+    // 投稿詳細ページにリダイレクト
+    return c.redirect(`https://my-favorite-albums.pages.dev/posts/${shortUrl.postId}`, 302);
+  } catch (error) {
+    console.error('Error redirecting short URL:', error);
+    return c.html(`
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <meta charset="UTF-8">
+        <title>エラー</title>
+        <meta http-equiv="refresh" content="3;url=https://my-favorite-albums.pages.dev">
+      </head>
+      <body>
+        <h1>エラーが発生しました</h1>
+        <p>3秒後にトップページにリダイレクトします...</p>
+      </body>
+      </html>
+    `, 500);
   }
 });
 

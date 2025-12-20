@@ -63,7 +63,7 @@ export function SpotifyPlayer({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-md sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden">
+      <DialogContent className="max-w-md sm:max-w-lg p-0 bg-transparent border-none shadow-none [&>button]:hidden top-[50%] -translate-y-1/2">
         <DialogHeader className="sr-only">
           <DialogTitle>Spotifyプレーヤー</DialogTitle>
           <DialogDescription>

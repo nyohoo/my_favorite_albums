@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Loader2, Share2, Download, Calendar, ArrowLeft } from 'lucide-react';
+import { Loader2, Share2, Download, Calendar, ArrowLeft, Copy, Check } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { AlbumGrid, type Album } from '@/components/AlbumGrid';
 import { SpotifyPlayer } from '@/components/SpotifyPlayer';
 import { Header } from '@/components/Header';
-import { getPost, getVibeCardUrl } from '@/lib/api';
+import { getPost, getVibeCardUrl, createShortUrl } from '@/lib/api';
 
 // リリース日を英語形式でフォーマットする関数
 const formatReleaseDate = (dateString: string): string => {
@@ -51,6 +51,7 @@ export function ShowPost() {
     id: string;
     userId: string;
     title: string | null;
+    hashtag: string;
     userName: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -61,6 +62,7 @@ export function ShowPost() {
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [playerType, setPlayerType] = useState<'album' | 'artist'>('album');
   const [shouldAnimate, setShouldAnimate] = useState(false);
+  const [urlCopied, setUrlCopied] = useState(false);
 
   const handleAlbumClick = (album: Album) => {
     console.log('handleAlbumClick called with album:', album);
@@ -159,6 +161,7 @@ export function ShowPost() {
 
     // Fileオブジェクトに変換
     const fileName = `${title || 'my-favorite-albums'}-${postId}.png`;
+    // titleはhashtagまたはtitleのフォールバック値
     return new File([pngBlob], fileName, { type: 'image/png' });
   };
 
@@ -247,10 +250,20 @@ export function ShowPost() {
     if (!id) return;
 
     try {
+      // 短縮URLを生成
+      let shareUrl = window.location.href;
+      try {
+        const shortUrlData = await createShortUrl(id);
+        shareUrl = shortUrlData.shortUrl;
+      } catch (shortUrlError) {
+        console.warn('短縮URL生成に失敗しましたが、元のURLでシェアします:', shortUrlError);
+        // 短縮URL生成に失敗しても元のURLでシェアを続行
+      }
+
       // 画像生成を試みる（失敗してもテキスト+URLはシェア可能）
       let imageFile: File | null = null;
       try {
-        imageFile = await generatePngImage(id, post?.title || null);
+        imageFile = await generatePngImage(id, post?.hashtag || post?.title || null);
       } catch (imageError) {
         console.warn('画像生成に失敗しましたが、テキスト+URLのみでシェアします:', imageError);
       }
@@ -258,9 +271,9 @@ export function ShowPost() {
       // Web Share APIが使える場合
       if (navigator.share) {
         const shareData: ShareData = {
-          title: post?.title || 'MyFavoriteAlbums',
-          text: `${post?.title || '私を構成する9枚'} - MyFavoriteAlbums`,
-          url: window.location.href,
+          title: post?.hashtag || post?.title || 'MyFavoriteAlbums',
+          text: `${post?.hashtag || post?.title || '私を構成する9枚'} - MyFavoriteAlbums\n\n詳細はこちら 👇\n${shareUrl}`,
+          url: shareUrl,
         };
 
         // 画像が生成できた場合、filesに追加
@@ -284,7 +297,7 @@ export function ShowPost() {
       }
 
       // PCの場合：Twitter Intent URLを開く（画像は含められないため、別途ダウンロード）
-      const shareText = `${post?.title || '私を構成する9枚'} - MyFavoriteAlbums\n${window.location.href}`;
+      const shareText = `${post?.hashtag || post?.title || '私を構成する9枚'} - MyFavoriteAlbums\n\n詳細はこちら 👇\n${shareUrl}`;
       const twitterUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`;
       
       // 画像が生成できた場合は自動ダウンロード
@@ -316,12 +329,134 @@ export function ShowPost() {
     }
   };
 
+  const handleCopyUrl = async () => {
+    if (!id) return;
+
+    try {
+      // 短縮URLを生成（バックグラウンドで実行、タイムアウト付き）
+      let urlToCopy = window.location.href;
+      try {
+        // 1秒以内に短縮URLを取得、失敗したら元のURLを使用
+        const shortUrlData = await Promise.race([
+          createShortUrl(id),
+          new Promise<{ shortUrl: string }>((resolve) => 
+            setTimeout(() => resolve({ shortUrl: window.location.href }), 1000)
+          )
+        ]);
+        urlToCopy = shortUrlData.shortUrl;
+      } catch (shortUrlError) {
+        console.warn('短縮URL生成に失敗しましたが、元のURLをコピーします:', shortUrlError);
+        // 短縮URL生成に失敗しても元のURLでコピーを続行
+      }
+
+      // モバイル対応: より確実なコピー方法
+      const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+      
+      // モバイルでは、promptを使用して確実にコピーできるようにする
+      // PCでも、Clipboard APIが失敗した場合はpromptを使用
+      if (isMobile) {
+        // モバイルでは、promptでURLを表示して手動コピーを促す（最も確実）
+        const message = `以下のURLをコピーしてください:`;
+        const promptResult = prompt(message, urlToCopy);
+        if (promptResult !== null) {
+          // ユーザーが手動でコピーした可能性があるので、成功として扱う
+          setUrlCopied(true);
+          setTimeout(() => setUrlCopied(false), 2000);
+        }
+        return;
+      }
+
+      // PCでのコピー処理
+      let copySuccess = false;
+      
+      // 方法1: Clipboard API（モダンブラウザ、HTTPS必須）
+      if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+        try {
+          await navigator.clipboard.writeText(urlToCopy);
+          // 実際にコピーされたか検証（読み取って確認）
+          // 注意: readTextは権限が必要で、多くのブラウザで失敗する可能性がある
+          try {
+            const copiedText = await navigator.clipboard.readText();
+            if (copiedText === urlToCopy) {
+              copySuccess = true;
+            } else {
+              console.warn('コピーされたテキストが一致しません');
+            }
+          } catch {
+            // 読み取り権限がない場合、writeTextが成功していれば成功とみなす
+            // ただし、モバイルでは信頼性が低いため、promptを使用
+            copySuccess = true;
+          }
+        } catch (clipboardError) {
+          console.warn('Clipboard API failed:', clipboardError);
+        }
+      }
+
+      // 方法2: execCommand（フォールバック、PCのみ）
+      if (!copySuccess) {
+        const textArea = document.createElement('textarea');
+        textArea.value = urlToCopy;
+        textArea.style.position = 'fixed';
+        textArea.style.left = '-9999px';
+        textArea.style.top = '-9999px';
+        textArea.style.width = '2em';
+        textArea.style.height = '2em';
+        textArea.style.padding = '0';
+        textArea.style.border = 'none';
+        textArea.style.outline = 'none';
+        textArea.style.boxShadow = 'none';
+        textArea.style.background = 'transparent';
+        textArea.setAttribute('readonly', '');
+        
+        document.body.appendChild(textArea);
+        textArea.focus();
+        textArea.select();
+        textArea.setSelectionRange(0, 999999);
+        
+        try {
+          const execSuccess = document.execCommand('copy');
+          if (execSuccess) {
+            copySuccess = true;
+          }
+        } catch (execError) {
+          console.warn('execCommand failed:', execError);
+        } finally {
+          document.body.removeChild(textArea);
+        }
+      }
+
+      // コピーが成功した場合のみ「コピーしました」を表示
+      if (copySuccess) {
+        setUrlCopied(true);
+        setTimeout(() => setUrlCopied(false), 2000);
+      } else {
+        // コピーに失敗した場合は、promptでURLを表示
+        const message = `URLを自動コピーできませんでした。\n\n以下のURLを手動でコピーしてください:`;
+        const promptResult = prompt(message, urlToCopy);
+        if (promptResult !== null) {
+          // ユーザーが手動でコピーした可能性があるので、成功として扱う
+          setUrlCopied(true);
+          setTimeout(() => setUrlCopied(false), 2000);
+        }
+      }
+    } catch (error) {
+      console.error('URLコピーエラー:', error);
+      // エラー時もpromptでURLを表示
+      const urlToCopy = window.location.href;
+      const promptResult = prompt('URLをコピーできませんでした。\n\n以下のURLを手動でコピーしてください:', urlToCopy);
+      if (promptResult !== null) {
+        setUrlCopied(true);
+        setTimeout(() => setUrlCopied(false), 2000);
+      }
+    }
+  };
+
   const handleDownload = async () => {
     if (!id) return;
 
     try {
       // 共通関数を使用してPNG画像を生成
-      const imageFile = await generatePngImage(id, post?.title || null);
+      const imageFile = await generatePngImage(id, post?.hashtag || post?.title || null);
       const pngBlob = await imageFile.arrayBuffer().then(buffer => new Blob([buffer], { type: 'image/png' }));
 
       // スマホの場合：Web Share APIを使用（OSのシェア機能を利用）
@@ -330,8 +465,8 @@ export function ShowPost() {
         if (navigator.canShare({ files: [imageFile] })) {
           try {
             await navigator.share({
-              title: post?.title || 'My Favorite Albums',
-              text: `${post?.title || '私を構成する9枚'} - MyFavoriteAlbums`,
+              title: post?.hashtag || post?.title || 'My Favorite Albums',
+              text: `${post?.hashtag || post?.title || '私を構成する9枚'} - MyFavoriteAlbums`,
               files: [imageFile],
             });
             return; // シェア成功で終了
@@ -397,11 +532,13 @@ export function ShowPost() {
       <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl">
         {/* ヘッダー */}
         <Header
-          title={post.title || undefined}
+          title={post.hashtag || post.title || undefined}
           subtitle={
             <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm sm:text-base">
               {post.userName && (
-                <span className="font-medium text-muted-foreground">by @{post.userName}</span>
+                <span className="text-muted-foreground">
+                  created by <span className="font-medium text-foreground">{post.userName}</span>
+                </span>
               )}
               <span className="text-muted-foreground">
                 {new Date(post.createdAt).toLocaleDateString('ja-JP', {
@@ -446,7 +583,8 @@ export function ShowPost() {
           <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-center" style={{ fontWeight: 700 }}>
             アルバム詳細
           </h2>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
+          <div className="max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 gap-6 sm:gap-8">
             {albums
               .filter((album): album is Album => album !== null)
               .map((album, index) => (
@@ -473,7 +611,7 @@ export function ShowPost() {
                     </div>
 
                     {/* アルバム情報 - AOTY風のタイポグラフィ */}
-                    <div className="flex-1 min-w-0 w-full sm:w-auto text-center sm:text-left">
+                    <div className="flex-1 min-w-0 w-full sm:w-auto text-center sm:text-left max-w-2xl">
                       <div className="space-y-3">
                         {/* アルバム名 */}
                         <h3
@@ -524,6 +662,7 @@ export function ShowPost() {
                   </div>
                 </div>
               ))}
+            </div>
           </div>
         </div>
 
@@ -537,6 +676,24 @@ export function ShowPost() {
           >
             <Share2 className="h-5 w-5 mr-2" />
             Xでシェア
+          </Button>
+          <Button
+            onClick={handleCopyUrl}
+            size="lg"
+            variant="outline"
+            className="min-w-40 border-2 border-border hover:bg-accent hover:border-primary/50 font-semibold transition-all duration-200 rounded-lg px-8 py-3"
+          >
+            {urlCopied ? (
+              <>
+                <Check className="h-5 w-5 mr-2" />
+                コピーしました
+              </>
+            ) : (
+              <>
+                <Copy className="h-5 w-5 mr-2" />
+                URLをコピー
+              </>
+            )}
           </Button>
           <Button
             onClick={handleDownload}

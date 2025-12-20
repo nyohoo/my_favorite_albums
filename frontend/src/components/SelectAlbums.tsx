@@ -65,7 +65,7 @@ export function SelectAlbums({
       const userName = 'user_' + Date.now();
       const result = await createPost({
         userName,
-        title: hashtag,
+        hashtag,
         albums,
       });
 
@@ -93,7 +93,7 @@ export function SelectAlbums({
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] bg-card border-border overflow-hidden flex flex-col">
+      <DialogContent className="top-[50%] -translate-y-1/2 max-w-4xl max-h-[90vh] bg-card border-border overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle className="text-foreground text-2xl">選択したアルバム</DialogTitle>
           <DialogDescription className="text-muted-foreground">
