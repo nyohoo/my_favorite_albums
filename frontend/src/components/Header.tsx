@@ -5,18 +5,16 @@ import type { ReactNode } from 'react';
 interface HeaderProps {
   title?: string;
   subtitle?: string | ReactNode;
-  showBackButton?: boolean;
 }
 
-export function Header({ title, subtitle, showBackButton = false }: HeaderProps) {
+export function Header({ title, subtitle }: HeaderProps) {
   const location = useLocation();
-  const isHomePage = location.pathname === '/';
   const isPostsPage = location.pathname === '/posts';
 
   return (
     <header className="mb-6 sm:mb-8">
       {/* 上部: ロゴとナビゲーション */}
-      <div className="flex items-center justify-between border-b border-border pb-4 sm:pb-6 mb-4 sm:mb-6">
+      <div className="flex items-center justify-between border-b border-border/50 pb-3 sm:pb-4 mb-4 sm:mb-6">
         {/* ロゴ（左上） */}
         <Link
           to="/posts"
@@ -30,24 +28,13 @@ export function Header({ title, subtitle, showBackButton = false }: HeaderProps)
 
         {/* ナビゲーション（右上） */}
         <nav className="flex items-center gap-3 sm:gap-4">
-          {showBackButton && (
-            <>
-              <Link
-                to="/posts"
-                className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors"
-              >
-                <ArrowLeft className="h-3.5 w-3.5" />
-                <span>一覧に戻る</span>
-              </Link>
-              <span className="text-muted-foreground/50">|</span>
-            </>
-          )}
-          {!isPostsPage && !isHomePage && (
+          {!isPostsPage && (
             <Link
               to="/posts"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-accent/50 transition-all duration-200 group"
             >
-              一覧
+              <ArrowLeft className="h-3.5 w-3.5 group-hover:-translate-x-0.5 transition-transform" />
+              <span>一覧に戻る</span>
             </Link>
           )}
         </nav>

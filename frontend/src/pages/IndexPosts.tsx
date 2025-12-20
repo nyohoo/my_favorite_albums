@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Loader2, Plus } from 'lucide-react';
+import { Loader2, Plus, Calendar } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
@@ -91,88 +91,100 @@ export function IndexPosts() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-7xl">
         {/* ヘッダー */}
         <Header
           title="投稿一覧"
           subtitle="みんなの好きな9枚のアルバム"
         />
-        <div className="flex justify-center mb-6 sm:mb-8">
+        
+        {/* 作成ボタン - AOTY風の配置 */}
+        <div className="flex justify-center mb-8 sm:mb-12">
           <Button
             onClick={() => navigate('/')}
             size="lg"
-            className="bg-primary hover:bg-primary/90 text-white px-6 py-2.5 font-bold transition-colors"
+            className="bg-primary hover:bg-primary/90 text-white px-8 py-3 font-semibold transition-all duration-200 shadow-lg hover:shadow-xl hover:scale-105 rounded-lg"
           >
-            <Plus className="h-4 w-4 mr-2" />
+            <Plus className="h-5 w-5 mr-2" />
             新しい投稿を作成
           </Button>
         </div>
 
-        {/* 投稿一覧 */}
+        {/* 投稿一覧 - AOTY風のモダンなグリッド */}
         {posts.length === 0 ? (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground mb-4">まだ投稿がありません</p>
+          <div className="text-center py-16">
+            <p className="text-muted-foreground mb-6 text-lg">まだ投稿がありません</p>
             <Button
               onClick={() => navigate('/')}
               variant="outline"
-              className="rounded-full"
+              className="rounded-lg px-6 py-2.5 hover:bg-accent transition-colors"
             >
               最初の投稿を作成する
             </Button>
           </div>
         ) : (
           <>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              {posts.map((post) => (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8">
+              {posts.map((post, index) => (
                 <Link
                   key={post.id}
                   to={`/posts/${post.id}`}
-                  className="block"
+                  className="block group"
+                  style={{
+                    animation: `fadeInUp 0.5s ease-out ${index * 0.05}s both`,
+                  }}
                 >
-                  <Card className="card-shadow cursor-pointer h-full overflow-hidden group bg-card rounded-none">
+                  <Card className="h-full overflow-hidden bg-card border border-border/50 rounded-lg transition-all duration-300 hover:shadow-2xl hover:shadow-primary/10 hover:border-primary/30 hover:-translate-y-1 cursor-pointer">
                     <CardContent className="p-0">
-                      {/* Vibe Card画像: フラット、角丸なし */}
+                      {/* Vibe Card画像 - AOTY風のアスペクト比 */}
                       <div className="aspect-square w-full bg-muted relative overflow-hidden">
                         <img
                           src={getVibeCardUrl(post.id)}
                           alt={post.title || '無題の投稿'}
-                          className="w-full h-full object-cover rounded-none"
+                          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           loading="lazy"
                         />
+                        {/* ホバー時のオーバーレイ */}
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
                       </div>
-                      {/* 投稿情報: AOTY風のコンパクトなレイアウト */}
-                      <div className="p-3 space-y-1">
+                      
+                      {/* 投稿情報 - AOTY風のコンパクトなレイアウト */}
+                      <div className="p-4 sm:p-5 space-y-2 text-center sm:text-left">
                         {post.title ? (
-                          <h3 className="font-bold text-sm leading-tight line-clamp-2 text-foreground">
+                          <h3 className="font-bold text-base sm:text-lg leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
                             {post.title}
                           </h3>
                         ) : (
-                          <h3 className="font-bold text-sm text-muted-foreground">
+                          <h3 className="font-bold text-base sm:text-lg text-muted-foreground">
                             無題の投稿
                           </h3>
                         )}
-                        <p className="text-xs text-muted-foreground">
-                          {new Date(post.createdAt).toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric',
-                          })}
-                        </p>
+                        <div className="flex items-center justify-center sm:justify-start gap-2 text-xs sm:text-sm text-muted-foreground">
+                          <Calendar className="h-3.5 w-3.5" />
+                          <time>
+                            {new Date(post.createdAt).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            })}
+                          </time>
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
                 </Link>
               ))}
             </div>
-            {/* もっと見るボタン */}
+            
+            {/* もっと見るボタン - AOTY風のスタイル */}
             {hasMore && (
-              <div className="mt-8 text-center">
+              <div className="mt-12 sm:mt-16 text-center">
                 <Button
                   onClick={loadMore}
                   disabled={loadingMore}
                   variant="outline"
                   size="lg"
-                  className="rounded-full"
+                  className="rounded-lg px-8 py-3 font-semibold border-2 hover:bg-accent hover:border-primary/50 transition-all duration-200"
                 >
                   {loadingMore ? (
                     <>

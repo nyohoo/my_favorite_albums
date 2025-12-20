@@ -22,6 +22,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
   const [playerSpotifyId, setPlayerSpotifyId] = useState<string>('');
   const [playerType, setPlayerType] = useState<'album' | 'artist'>('album');
   const [playerAlbum, setPlayerAlbum] = useState<Album | undefined>(undefined);
+  const [showLoading, setShowLoading] = useState(false);
 
   // ダイアログが開いた時に検索フィールドにフォーカス
   useEffect(() => {
@@ -41,8 +42,14 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
     if (query.trim().length === 0) {
       setResults([]);
       setError(null);
+      setShowLoading(false);
       return;
     }
+
+    // ローディング表示を遅延させる（短時間の連続入力では表示しない）
+    const loadingTimeoutId = setTimeout(() => {
+      setShowLoading(true);
+    }, 300); // 300ms経過後にローディング表示
 
     const timeoutId = setTimeout(async () => {
       setLoading(true);
@@ -77,10 +84,15 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
         setResults([]);
       } finally {
         setLoading(false);
+        setShowLoading(false);
       }
     }, 500); // デバウンス: 500ms
 
-    return () => clearTimeout(timeoutId);
+    return () => {
+      clearTimeout(timeoutId);
+      clearTimeout(loadingTimeoutId);
+      setShowLoading(false);
+    };
   }, [query, isOpen]);
 
   return (
@@ -99,12 +111,14 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
         />
       </div>
 
-      {loading && (
-        <div className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-primary" />
-          <span className="ml-2 text-muted-foreground">検索中...</span>
-        </div>
-      )}
+      {/* 固定スペースを確保（ローディング表示時のみ表示） */}
+      <div className="h-8 flex items-center justify-center">
+        {showLoading && loading && (
+          <div className="h-1 w-32 bg-muted rounded-full overflow-hidden">
+            <div className="h-full bg-primary rounded-full animate-pulse" style={{ width: '60%' }} />
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="text-center text-destructive py-4">
@@ -125,10 +139,13 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
       )}
 
       <div className="max-h-[60vh] overflow-y-auto space-y-2">
-        {results.map((album) => (
+        {results.map((album, index) => (
           <Card
             key={album.spotifyId}
-            className="hover:bg-accent transition-colors"
+            className="hover:bg-accent/50 hover:shadow-md transition-all duration-300 ease-out album-search-result border-border/50"
+            style={{
+              animation: `albumSearchFadeIn 0.4s ease-out ${index * 0.05}s both`,
+            }}
           >
             <CardContent className="p-3">
               <div className="flex gap-3">

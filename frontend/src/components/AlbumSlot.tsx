@@ -1,3 +1,4 @@
+import { useState, useRef } from 'react';
 import { Plus, X, GripVertical, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -25,6 +26,10 @@ export function AlbumSlot({
   onClick,
   readonly = false,
 }: AlbumSlotProps) {
+  const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
+  const rippleIdRef = useRef(0);
+  const cardRef = useRef<HTMLDivElement>(null);
+
   const {
     attributes,
     listeners,
@@ -47,6 +52,53 @@ export function AlbumSlot({
     id: `album-${index}`,
     disabled: false, // すべてのスロットをドロップ可能に
   });
+
+  // リップルエフェクトを生成する関数
+  const createRipple = (event: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>) => {
+    if (!cardRef.current || !onClick) return;
+
+    const rect = cardRef.current.getBoundingClientRect();
+    let x: number;
+    let y: number;
+
+    if ('touches' in event) {
+      // タッチイベント
+      x = event.touches[0].clientX - rect.left;
+      y = event.touches[0].clientY - rect.top;
+    } else {
+      // マウスイベント
+      x = event.clientX - rect.left;
+      y = event.clientY - rect.top;
+    }
+
+    const newRipple = {
+      x,
+      y,
+      id: rippleIdRef.current++,
+    };
+
+    setRipples((prev) => [...prev, newRipple]);
+
+    // アニメーション終了後にリップルを削除
+    setTimeout(() => {
+      setRipples((prev) => prev.filter((ripple) => ripple.id !== newRipple.id));
+    }, 600);
+  };
+
+  // クリック/タッチハンドラー
+  const handleInteraction = (
+    event: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
+  ) => {
+    if (readonly && onClick) {
+      createRipple(event);
+      // 少し遅延させてからonClickを実行（リップルが見えるように）
+      setTimeout(() => {
+        onClick();
+      }, 50);
+    } else if (onClick) {
+      onClick();
+    }
+  };
 
   // 既存のアルバムがあるスロットでも、ドロップ可能にするために両方のrefを設定
   const setNodeRef = (node: HTMLElement | null) => {
@@ -98,8 +150,9 @@ export function AlbumSlot({
   }
 
   // readonlyモードの場合は、角丸をなくし、シームレスなデザインにする
+  // タップ可能であることを示すアニメーションクラスを追加
   const cardClassName = readonly
-    ? `relative h-full rounded-none border-0 shadow-none ${onClick ? 'cursor-pointer' : ''}`
+    ? `relative h-full rounded-none border-0 shadow-none ${onClick ? 'cursor-pointer album-slot-tappable' : ''}`
     : `relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''} ${onClick ? 'cursor-pointer' : ''}`;
   
   const imageClassName = readonly
@@ -121,12 +174,29 @@ export function AlbumSlot({
       className={`aspect-square ${isDragging ? 'cursor-grabbing' : ''}`}
     >
       <Card 
-        className={cardClassName}
-        onClick={onClick}
+        ref={cardRef}
+        className={`${cardClassName} relative overflow-hidden`}
+        onClick={readonly && onClick ? handleInteraction : onClick}
+        onTouchStart={readonly && onClick ? handleInteraction : undefined}
       >
+        {/* リップルエフェクト */}
+        {readonly && onClick && (
+          <div className="absolute inset-0 pointer-events-none z-20">
+            {ripples.map((ripple) => (
+              <span
+                key={ripple.id}
+                className="ripple-effect"
+                style={{
+                  left: ripple.x,
+                  top: ripple.y,
+                }}
+              />
+            ))}
+          </div>
+        )}
         <CardContent 
           className="p-0 h-full relative touch-none"
-          {...(onClick ? (readonly ? { onClick } : {}) : { ...attributes, ...listeners })}
+          {...(onClick ? (readonly ? {} : { onClick }) : { ...attributes, ...listeners })}
           style={{ cursor: onClick ? 'pointer' : (album ? 'grab' : 'default'), WebkitTouchCallout: 'none' }}
         >
           {/* ドラッグハンドル（readonlyモードでは非表示） */}
@@ -144,6 +214,10 @@ export function AlbumSlot({
             className={imageClassName}
             draggable="false"
           />
+          {/* readonlyモードでタップ可能な場合の視覚的インジケーター */}
+          {readonly && onClick && (
+            <div className="absolute inset-0 border-2 border-transparent hover:border-primary/50 transition-all duration-300 rounded-none pointer-events-none" />
+          )}
           {/* ホバー時のオーバーレイ（readonlyモードでは非表示） */}
           {!readonly && (
             <div className={overlayClassName}>

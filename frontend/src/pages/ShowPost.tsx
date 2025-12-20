@@ -60,6 +60,7 @@ export function ShowPost() {
   const [selectedAlbum, setSelectedAlbum] = useState<Album | null>(null);
   const [selectedArtistId, setSelectedArtistId] = useState<string | null>(null);
   const [playerType, setPlayerType] = useState<'album' | 'artist'>('album');
+  const [shouldAnimate, setShouldAnimate] = useState(false);
 
   const handleAlbumClick = (album: Album) => {
     console.log('handleAlbumClick called with album:', album);
@@ -215,6 +216,22 @@ export function ShowPost() {
         });
         
         setAlbums(albumsWithPositions);
+        
+        // 画像の読み込みを待ってからアニメーションを開始
+        const imagePromises = formattedAlbums.map((album) => {
+          return new Promise<void>((resolve) => {
+            const img = new Image();
+            img.src = album.imageUrl;
+            img.onload = () => resolve();
+            img.onerror = () => resolve(); // エラーでも続行
+          });
+        });
+        
+        // すべての画像が読み込まれた後、少し遅延させてからアニメーション開始
+        await Promise.all(imagePromises);
+        await new Promise(resolve => setTimeout(resolve, 300)); // 300ms遅延
+        
+        setShouldAnimate(true);
       } catch (err) {
         console.error('投稿取得エラー:', err);
         setError(err instanceof Error ? err.message : '投稿の取得に失敗しました');
@@ -377,16 +394,16 @@ export function ShowPost() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl">
         {/* ヘッダー */}
         <Header
           title={post.title || undefined}
           subtitle={
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4">
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-2 sm:gap-4 text-sm sm:text-base">
               {post.userName && (
-                <span className="font-medium">by @{post.userName}</span>
+                <span className="font-medium text-muted-foreground">by @{post.userName}</span>
               )}
-              <span>
+              <span className="text-muted-foreground">
                 {new Date(post.createdAt).toLocaleDateString('ja-JP', {
                   year: 'numeric',
                   month: 'long',
@@ -395,11 +412,10 @@ export function ShowPost() {
               </span>
             </div>
           }
-          showBackButton={true}
         />
 
-        {/* アルバムグリッド（読み取り専用） */}
-        <div className="mb-6 sm:mb-8">
+        {/* アルバムグリッド（読み取り専用） - AOTY風の中央配置 */}
+        <div className="mb-12 sm:mb-16">
           <AlbumGrid
             albums={albums}
             readonly={true}
@@ -408,6 +424,7 @@ export function ShowPost() {
             onReplace={() => {}}
             onReorder={() => {}}
             onAlbumClick={handleAlbumClick}
+            shouldAnimate={shouldAnimate}
           />
         </div>
 
@@ -424,21 +441,27 @@ export function ShowPost() {
           }}
         />
 
-        {/* アルバム詳細リスト */}
-        <div className="mt-12 sm:mt-16">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-center" style={{ fontWeight: 700 }}>
+        {/* アルバム詳細リスト - AOTY風のモダンなカードデザイン */}
+        <div className="mt-16 sm:mt-20">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-8 sm:mb-12 text-center" style={{ fontWeight: 700 }}>
             アルバム詳細
           </h2>
-          <div className="space-y-6 sm:space-y-8">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 sm:gap-8">
             {albums
               .filter((album): album is Album => album !== null)
-              .map((album) => (
-                <div key={album.spotifyId} className="border-b border-border pb-6 sm:pb-8 last:border-b-0">
-                  <div className="flex flex-col sm:flex-row gap-4 sm:gap-6 items-center sm:items-start">
-                    {/* アルバム画像 */}
+              .map((album, index) => (
+                <div
+                  key={album.spotifyId}
+                  className="group bg-card border border-border/50 rounded-lg p-6 sm:p-8 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all duration-300 hover:-translate-y-1"
+                  style={{
+                    animation: `fadeInUp 0.5s ease-out ${index * 0.05}s both`,
+                  }}
+                >
+                  <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+                    {/* アルバム画像 - AOTY風のサイズとホバーエフェクト */}
                     <div className="flex-shrink-0">
                       <div
-                        className="w-32 h-32 sm:w-40 sm:h-40 rounded-none overflow-hidden cursor-pointer hover:opacity-85 transition-opacity"
+                        className="w-32 h-32 sm:w-40 sm:h-40 rounded-lg overflow-hidden cursor-pointer transition-all duration-300 group-hover:scale-105 shadow-lg group-hover:shadow-xl"
                         onClick={() => handleAlbumClick(album)}
                       >
                         <img
@@ -449,12 +472,12 @@ export function ShowPost() {
                       </div>
                     </div>
 
-                    {/* アルバム情報 */}
+                    {/* アルバム情報 - AOTY風のタイポグラフィ */}
                     <div className="flex-1 min-w-0 w-full sm:w-auto text-center sm:text-left">
-                      <div className="space-y-2">
+                      <div className="space-y-3">
                         {/* アルバム名 */}
                         <h3
-                          className="text-lg sm:text-xl font-bold cursor-pointer hover:text-primary transition-colors"
+                          className="text-xl sm:text-2xl font-bold cursor-pointer hover:text-primary transition-colors duration-200 line-clamp-2"
                           style={{ fontWeight: 700 }}
                           onClick={() => handleAlbumClick(album)}
                         >
@@ -463,7 +486,7 @@ export function ShowPost() {
 
                         {/* アーティスト名 */}
                         <p
-                          className="text-sm sm:text-base font-semibold text-foreground cursor-pointer hover:text-primary transition-colors"
+                          className="text-base sm:text-lg font-semibold text-foreground cursor-pointer hover:text-primary transition-colors duration-200"
                           onClick={() => handleArtistClick(album)}
                         >
                           {album.artist}
@@ -471,16 +494,16 @@ export function ShowPost() {
 
                         {/* リリース日 */}
                         {album.releaseDate && (
-                          <div className="flex items-center justify-center sm:justify-start gap-1.5 text-xs sm:text-sm text-muted-foreground font-light">
-                            <Calendar className="h-3 w-3 sm:h-3.5 sm:w-3.5 flex-shrink-0" />
+                          <div className="flex items-center justify-center sm:justify-start gap-2 text-sm text-muted-foreground">
+                            <Calendar className="h-4 w-4 flex-shrink-0" />
                             <span>{formatReleaseDate(album.releaseDate)}</span>
                           </div>
                         )}
                       </div>
 
                       {/* SongLink埋め込み */}
-                      <div className="mt-4 sm:mt-6">
-                        <div className="w-full overflow-hidden rounded-md" style={{ height: '43px', position: 'relative' }}>
+                      <div className="mt-6">
+                        <div className="w-full overflow-hidden rounded-lg" style={{ height: '43px', position: 'relative' }}>
                           <iframe
                             src={`https://embed.odesli.co/?url=spotify:album:${album.spotifyId}&theme=dark`}
                             frameBorder="0"
@@ -504,23 +527,23 @@ export function ShowPost() {
           </div>
         </div>
 
-        {/* アクションボタン: AOTY風のフラットデザイン */}
-        <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center items-center">
+        {/* アクションボタン - AOTY風のモダンなスタイル */}
+        <div className="mt-12 sm:mt-16 flex flex-col sm:flex-row gap-4 justify-center items-center">
           <Button
             onClick={handleShare}
             size="lg"
             variant="outline"
-            className="min-w-32 border border-border hover:bg-accent font-bold transition-colors"
+            className="min-w-40 border-2 border-border hover:bg-accent hover:border-primary/50 font-semibold transition-all duration-200 rounded-lg px-8 py-3"
           >
-            <Share2 className="h-4 w-4 mr-2" />
+            <Share2 className="h-5 w-5 mr-2" />
             Xでシェア
           </Button>
           <Button
             onClick={handleDownload}
             size="lg"
-            className="min-w-32 bg-primary hover:bg-primary/90 text-white font-bold transition-colors"
+            className="min-w-40 bg-primary hover:bg-primary/90 text-white font-semibold transition-all duration-200 rounded-lg px-8 py-3 shadow-lg hover:shadow-xl hover:scale-105"
           >
-            <Download className="h-4 w-4 mr-2" />
+            <Download className="h-5 w-5 mr-2" />
             画像をダウンロード
           </Button>
         </div>

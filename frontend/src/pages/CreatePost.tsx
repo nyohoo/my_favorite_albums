@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
 import { Header } from '@/components/Header';
 import {
   Dialog,
@@ -12,6 +13,7 @@ import {
 import { AlbumGrid, type Album } from '@/components/AlbumGrid';
 import { AlbumSearch } from '@/components/AlbumSearch';
 import { createPost } from '@/lib/api';
+import { User, FileText, Hash, CheckCircle2 } from 'lucide-react';
 
 const HASHTAGS = [
   '#私を構成する9枚',
@@ -193,15 +195,15 @@ export function CreatePost() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <div className="container mx-auto px-4 py-6 sm:py-8 max-w-4xl">
+      <div className="container mx-auto px-4 py-4 sm:py-6 max-w-6xl">
         {/* ヘッダー */}
-        <div className="mb-6 sm:mb-8">
+        <div className="mb-8 sm:mb-12">
           <div className="flex justify-end mb-4">
             <Link
               to="/posts"
-              className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+              className="text-sm text-muted-foreground hover:text-primary transition-colors font-medium"
             >
-              投稿一覧を見る
+              投稿一覧を見る →
             </Link>
           </div>
           <Header
@@ -209,72 +211,112 @@ export function CreatePost() {
           />
         </div>
 
-        {/* 入力フィールド */}
-        <div className="mb-6 sm:mb-8 space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              ユーザー名（任意）
-            </label>
-            <input
-              type="text"
-              value={userName}
-              onChange={(e) => setUserName(e.target.value)}
-              placeholder="あなたの名前（空欄でも投稿可能）"
-              className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              タイトル（任意）
-            </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="例: 私を構成する9枚"
-              className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              ハッシュタグ
-            </label>
-            <select
-              value={selectedHashtag}
-              onChange={(e) => handleHashtagChange(e.target.value)}
-              className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-            >
-              {HASHTAGS.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
+        {/* 入力フィールド - AOTY風のカード形式 */}
+        <Card className="mb-8 sm:mb-12 border-border/50 bg-card">
+          <CardContent className="p-6 sm:p-8">
+            <div className="space-y-6">
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold mb-3 text-foreground">
+                  <User className="h-4 w-4 text-primary" />
+                  ユーザー名（任意）
+                </label>
+                <input
+                  type="text"
+                  value={userName}
+                  onChange={(e) => setUserName(e.target.value)}
+                  placeholder="あなたの名前（空欄でも投稿可能）"
+                  className="w-full px-4 py-3 border-2 border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 text-base"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold mb-3 text-foreground">
+                  <FileText className="h-4 w-4 text-primary" />
+                  タイトル（任意）
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="例: 私を構成する9枚"
+                  className="w-full px-4 py-3 border-2 border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 text-base"
+                />
+              </div>
+              <div>
+                <label className="flex items-center gap-2 text-sm font-semibold mb-3 text-foreground">
+                  <Hash className="h-4 w-4 text-primary" />
+                  ハッシュタグ
+                </label>
+                <select
+                  value={selectedHashtag}
+                  onChange={(e) => handleHashtagChange(e.target.value)}
+                  className="w-full px-4 py-3 border-2 border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 text-base"
+                >
+                  {HASHTAGS.map((tag) => (
+                    <option key={tag} value={tag}>
+                      {tag}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
 
         {/* アルバムグリッド */}
-        <AlbumGrid
-          albums={albums}
-          onAdd={handleAdd}
-          onRemove={handleRemove}
-          onReplace={handleReplace}
-          onReorder={handleReorder}
-        />
+        <div className="mb-8 sm:mb-12">
+          <AlbumGrid
+            albums={albums}
+            onAdd={handleAdd}
+            onRemove={handleRemove}
+            onReplace={handleReplace}
+            onReorder={handleReorder}
+          />
+        </div>
 
-        {/* 作成ボタン */}
-        <div className="mt-6 sm:mt-8 text-center">
-          <p className="text-sm text-muted-foreground mb-4">
-            {selectedCount} / 9 枚選択中
-          </p>
-          <Button
-            onClick={handleCreate}
-            disabled={!canCreate}
-            size="lg"
-            className="min-w-32 bg-primary hover:bg-primary/90 text-white px-6 py-2.5 font-bold transition-colors"
-          >
-            投稿を作成
-          </Button>
+        {/* プログレス表示と作成ボタン - AOTY風のモダンなスタイル */}
+        <div className="mt-8 sm:mt-12">
+          <Card className="border-border/50 bg-card">
+            <CardContent className="p-6 sm:p-8">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-6">
+                {/* プログレス表示 */}
+                <div className="flex-1 w-full sm:w-auto">
+                  <div className="flex items-center gap-4 mb-3">
+                    <div className="flex-1 bg-muted rounded-full h-3 overflow-hidden">
+                      <div
+                        className="bg-primary h-full rounded-full transition-all duration-500 ease-out"
+                        style={{ width: `${(selectedCount / 9) * 100}%` }}
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {selectedCount === 9 ? (
+                        <CheckCircle2 className="h-5 w-5 text-primary" />
+                      ) : null}
+                      <span className="text-base font-semibold text-foreground min-w-[80px] text-right">
+                        {selectedCount} / 9 枚
+                      </span>
+                    </div>
+                  </div>
+                  <p className="text-sm text-muted-foreground text-center sm:text-left">
+                    {selectedCount === 0
+                      ? 'アルバムを選択してください'
+                      : selectedCount === 9
+                      ? 'すべてのアルバムが選択されました！'
+                      : `${9 - selectedCount}枚のアルバムを追加できます`}
+                  </p>
+                </div>
+
+                {/* 作成ボタン */}
+                <Button
+                  onClick={handleCreate}
+                  disabled={!canCreate}
+                  size="lg"
+                  className="min-w-40 bg-primary hover:bg-primary/90 text-white font-semibold transition-all duration-200 rounded-lg px-8 py-3 shadow-lg hover:shadow-xl hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100"
+                >
+                  投稿を作成
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* 検索ダイアログ */}
