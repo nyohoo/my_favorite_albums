@@ -32,6 +32,7 @@ interface AlbumGridProps {
   onReorder: (fromIndex: number, toIndex: number) => void;
   readonly?: boolean;
   onAlbumClick?: (album: Album) => void;
+  shouldAnimate?: boolean;
 }
 
 import { AlbumSlot } from './AlbumSlot';
@@ -74,6 +75,7 @@ export function AlbumGrid({
   onReorder,
   readonly = false,
   onAlbumClick,
+  shouldAnimate = false,
 }: AlbumGridProps) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -124,19 +126,38 @@ export function AlbumGrid({
   // readonlyモードの場合は、ドラッグ&ドロップを無効化
   if (readonly) {
     return (
-      <div className="grid grid-cols-3 gap-0 max-w-2xl mx-auto">
-        {albums.map((album, index) => (
-          <AlbumSlot
-            key={index}
-            album={album}
-            index={index}
-            onAdd={() => {}}
-            onRemove={() => {}}
-            onReplace={() => {}}
-            onClick={album && onAlbumClick ? () => onAlbumClick(album) : undefined}
-            readonly={true}
-          />
-        ))}
+      <div className="grid grid-cols-3 gap-0 max-w-2xl mx-auto" style={{ perspective: '1000px' }}>
+        {albums.map((album, index) => {
+          // 左上から順に波打つアニメーションの遅延を計算（行ごとに0.1s、列ごとに0.05s）
+          const row = Math.floor(index / 3);
+          const col = index % 3;
+          const delay = shouldAnimate ? row * 0.1 + col * 0.05 : 0;
+          
+          return (
+            <div
+              key={index}
+              className={shouldAnimate ? '' : 'album-grid-item-pre-animate'}
+              style={{
+                animation: shouldAnimate
+                  ? `waveIn 1.2s ease-out ${delay}s both`
+                  : 'none',
+                transformStyle: 'preserve-3d',
+                backfaceVisibility: 'hidden',
+                WebkitBackfaceVisibility: 'hidden',
+              }}
+            >
+              <AlbumSlot
+                album={album}
+                index={index}
+                onAdd={() => {}}
+                onRemove={() => {}}
+                onReplace={() => {}}
+                onClick={album && onAlbumClick ? () => onAlbumClick(album) : undefined}
+                readonly={true}
+              />
+            </div>
+          );
+        })}
       </div>
     );
   }

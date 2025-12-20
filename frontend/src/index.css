@@ -78,3 +78,213 @@
   animation-fill-mode: forwards;
   opacity: 0.7;
 }
+
+/* AOTY風のモダンなスタイル */
+@layer utilities {
+  /* カードのシャドウエフェクト */
+  .card-shadow {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  /* スムーズなトランジション */
+  .transition-smooth {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+}
+
+/* グリッドアイテムのアニメーション */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.grid-item {
+  animation: fadeInUp 0.5s ease-out forwards;
+}
+
+/* スムーズなスクロール */
+html {
+  scroll-behavior: smooth;
+}
+
+/* ダイアログのふわっとしたアニメーション */
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes dialogZoomIn {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes dialogZoomOut {
+  from {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.96);
+  }
+}
+
+/* アルバム検索結果のふわっとしたアニメーション */
+@keyframes albumSearchFadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(10px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.album-search-result {
+  will-change: transform, opacity;
+}
+
+/* アルバムグリッドのタップ可能インジケーター用アニメーション */
+@keyframes rippleWave {
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.05);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+}
+
+@keyframes gentlePulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(29, 185, 84, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(29, 185, 84, 0);
+  }
+}
+
+@keyframes tapIndicator {
+  0%, 100% {
+    opacity: 0.3;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.6;
+    transform: scale(1.02);
+  }
+}
+
+/* 波打つアニメーション（左上から順に）- 立体的な効果（滑らか版） */
+@keyframes waveIn {
+  0% {
+    opacity: 0;
+    transform: perspective(1000px) rotateX(12deg) rotateY(-4deg) scale(0.88) translateY(15px) translateZ(-40px);
+    filter: blur(3px);
+    box-shadow: 0 0 0 rgba(29, 185, 84, 0);
+  }
+  40% {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(2deg) rotateY(-1deg) scale(1.06) translateY(-6px) translateZ(15px);
+    filter: blur(0.5px);
+    box-shadow: 0 10px 30px rgba(29, 185, 84, 0.3), 0 0 20px rgba(29, 185, 84, 0.2);
+  }
+  100% {
+    opacity: 1;
+    transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1) translateY(0) translateZ(0);
+    filter: blur(0px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  }
+}
+
+/* アニメーション開始前の状態 */
+.album-grid-item-pre-animate {
+  opacity: 1;
+  transform: perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1) translateY(0) translateZ(0);
+  filter: blur(0px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* PCホバー時のふわっとしたエフェクト */
+@media (hover: hover) {
+  .album-slot-tappable {
+    transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  
+  .album-slot-tappable:hover {
+    transform: translateY(-1px) scale(1.005) !important;
+    box-shadow: 0 6px 16px rgba(29, 185, 84, 0.12), 0 0 8px rgba(29, 185, 84, 0.06) !important;
+    opacity: 0.98;
+  }
+}
+
+.album-slot-tappable {
+  position: relative;
+  animation: waveIn 0.6s ease-out forwards;
+}
+
+.album-slot-tappable::before {
+  content: '';
+  position: absolute;
+  inset: -2px;
+  border-radius: inherit;
+  background: linear-gradient(45deg, transparent, rgba(29, 185, 84, 0.3), transparent);
+  opacity: 0;
+  animation: gentlePulse 3s ease-in-out infinite;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* タップ時のフィードバック */
+.album-slot-tappable:active {
+  transform: scale(0.98);
+  transition: transform 0.1s;
+}
+
+/* リップルエフェクト */
+@keyframes ripple {
+  0% {
+    width: 0;
+    height: 0;
+    opacity: 0.6;
+  }
+  100% {
+    width: 300px;
+    height: 300px;
+    opacity: 0;
+    margin-left: -150px;
+    margin-top: -150px;
+  }
+}
+
+.ripple-effect {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(29, 185, 84, 0.6) 0%, rgba(29, 185, 84, 0.3) 50%, transparent 100%);
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  animation: ripple 0.6s ease-out;
+  will-change: width, height, opacity;
+}
