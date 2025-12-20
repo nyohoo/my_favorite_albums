@@ -124,9 +124,25 @@ npm run dev
 ```
 
 ### デプロイ
+
+#### 本番デプロイ
+
+詳細なデプロイ手順は [`DEPLOY.md`](./DEPLOY.md) を参照してください。
+
+**クイックスタート**:
+
 ```bash
-npm run deploy
+# デプロイ前チェック
+npm run deploy:check
+
+# バックエンドをデプロイ
+npm run deploy:backend
+
+# フロントエンドをビルド
+npm run build:frontend
 ```
+
+フロントエンドはCloudflare Pagesでデプロイします（GitHub連携または手動デプロイ）。
 
 ### データベース操作
 ```bash
@@ -245,10 +261,37 @@ npm run dev
 
 #### 本番環境での設定
 
+詳細は [`DEPLOY.md`](./DEPLOY.md) を参照してください。
+
+**クイックスタート**:
+
 ```bash
+# Spotify API認証情報を本番環境に設定
 npx wrangler secret put SPOTIFY_CLIENT_ID
 npx wrangler secret put SPOTIFY_CLIENT_SECRET
 ```
+
+## ■本番デプロイ
+
+### デプロイ構成
+
+- **バックエンド**: Cloudflare Workers（無料プランで100,000リクエスト/日）
+- **フロントエンド**: Cloudflare Pages（無料プランで500ビルド/月、帯域幅無制限）
+- **データベース**: Cloudflare D1（無料プランで5,000,000行読み取り/月）
+
+**維持費: 0円**（無料プラン内で運用可能）
+
+### デプロイ手順
+
+詳細な手順は [`DEPLOY.md`](./DEPLOY.md) を参照してください。
+
+主な手順:
+1. Cloudflareアカウントの準備
+2. D1データベースの作成とマイグレーション
+3. 環境変数（Spotify API認証情報）の設定
+4. バックエンド（Workers）のデプロイ
+5. フロントエンド（Pages）のデプロイ
+6. CORS設定の確認
 
 ## ■次のステップ
 

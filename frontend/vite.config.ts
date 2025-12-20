@@ -13,9 +13,22 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
-        target: 'http://localhost:8788',
+        target: 'http://localhost:8787',
         changeOrigin: true,
         // rewriteを削除: バックエンドのエンドポイントは /api/* なので、そのまま転送
+      },
+    },
+  },
+  build: {
+    outDir: 'dist',
+    sourcemap: false,
+    minify: 'esbuild',
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          'ui-vendor': ['@radix-ui/react-dialog', '@radix-ui/react-slot'],
+        },
       },
     },
   },

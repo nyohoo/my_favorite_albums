@@ -1,0 +1,4 @@
+# Cloudflare Pages SPAルーティング対応
+# すべてのリクエストをindex.htmlにリダイレクト（SPAルーティング用）
+/*    /index.html   200
+

@@ -10,6 +10,7 @@ interface Post {
   id: string;
   userId: string;
   title: string | null;
+  hashtag: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -140,7 +141,7 @@ export function IndexPosts() {
                       <div className="aspect-square w-full bg-muted relative overflow-hidden">
                         <img
                           src={getVibeCardUrl(post.id)}
-                          alt={post.title || '無題の投稿'}
+                          alt={post.hashtag || post.title || '無題の投稿'}
                           className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                           loading="lazy"
                         />
@@ -150,9 +151,9 @@ export function IndexPosts() {
                       
                       {/* 投稿情報 - AOTY風のコンパクトなレイアウト */}
                       <div className="p-4 sm:p-5 space-y-2 text-center sm:text-left">
-                        {post.title ? (
+                        {post.hashtag || post.title ? (
                           <h3 className="font-bold text-base sm:text-lg leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors duration-200">
-                            {post.title}
+                            {post.hashtag || post.title}
                           </h3>
                         ) : (
                           <h3 className="font-bold text-base sm:text-lg text-muted-foreground">

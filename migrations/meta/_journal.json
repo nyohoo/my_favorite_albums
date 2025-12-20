@@ -15,6 +15,13 @@
       "when": 1766166035475,
       "tag": "0001_add_image_svg_to_posts",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1766247320100,
+      "tag": "0002_steep_punisher",
+      "breakpoints": true
     }
   ]
 }

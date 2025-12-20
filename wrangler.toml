@@ -1,4 +1,4 @@
-name = "my-favorite-albums"
+name = "albums"
 main = "src/index.ts"
 compatibility_date = "2025-01-20"
 compatibility_flags = ["nodejs_compat"]
@@ -7,7 +7,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "my-favorite-albums"
-database_id = "" # 初回デプロイ後に自動生成される
+database_id = "ac5736ed-06e6-476b-955d-0a9191344593"
 
 # 環境変数の設定
 [vars]

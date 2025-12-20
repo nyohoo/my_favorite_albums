@@ -29,6 +29,7 @@ export function AlbumSlot({
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([]);
   const rippleIdRef = useRef(0);
   const cardRef = useRef<HTMLDivElement>(null);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
 
   const {
     attributes,
@@ -85,10 +86,8 @@ export function AlbumSlot({
     }, 600);
   };
 
-  // クリック/タッチハンドラー
-  const handleInteraction = (
-    event: React.MouseEvent<HTMLDivElement> | React.TouchEvent<HTMLDivElement>
-  ) => {
+  // クリック/タッチハンドラー（タッチ感度を調整）
+  const handleClick = (event: React.MouseEvent<HTMLDivElement>) => {
     if (readonly && onClick) {
       createRipple(event);
       // 少し遅延させてからonClickを実行（リップルが見えるように）
@@ -97,6 +96,34 @@ export function AlbumSlot({
       }, 50);
     } else if (onClick) {
       onClick();
+    }
+  };
+
+  // タッチ開始位置を記録
+  const handleTouchStart = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (readonly && onClick) {
+      const touch = event.touches[0];
+      touchStartRef.current = { x: touch.clientX, y: touch.clientY };
+    }
+  };
+
+  // タッチハンドラー（タッチ感度を調整：タッチ終了時に反応）
+  const handleTouchEnd = (event: React.TouchEvent<HTMLDivElement>) => {
+    if (readonly && onClick && touchStartRef.current) {
+      const touch = event.changedTouches[0];
+      const moveX = Math.abs(touch.clientX - touchStartRef.current.x);
+      const moveY = Math.abs(touch.clientY - touchStartRef.current.y);
+      
+      // 10px以内の移動のみ反応（誤タッチ防止）
+      if (moveX < 10 && moveY < 10) {
+        createRipple(event);
+        // 少し遅延させてからonClickを実行（リップルが見えるように）
+        setTimeout(() => {
+          onClick();
+        }, 50);
+      }
+      
+      touchStartRef.current = null;
     }
   };
 
@@ -151,8 +178,9 @@ export function AlbumSlot({
 
   // readonlyモードの場合は、角丸をなくし、シームレスなデザインにする
   // タップ可能であることを示すアニメーションクラスを追加
+  // アルバム詳細セクションと同じようなふわっとした反応を追加
   const cardClassName = readonly
-    ? `relative h-full rounded-none border-0 shadow-none ${onClick ? 'cursor-pointer album-slot-tappable' : ''}`
+    ? `relative h-full rounded-none border-0 shadow-none transition-all duration-300 ${onClick ? 'cursor-pointer active:scale-[0.98] active:opacity-90 sm:hover:scale-[1.02] sm:hover:opacity-95' : ''}`
     : `relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''} ${onClick ? 'cursor-pointer' : ''}`;
   
   const imageClassName = readonly
@@ -176,8 +204,9 @@ export function AlbumSlot({
       <Card 
         ref={cardRef}
         className={`${cardClassName} relative overflow-hidden`}
-        onClick={readonly && onClick ? handleInteraction : onClick}
-        onTouchStart={readonly && onClick ? handleInteraction : undefined}
+        onClick={readonly && onClick ? handleClick : onClick}
+        onTouchStart={readonly && onClick ? handleTouchStart : undefined}
+        onTouchEnd={readonly && onClick ? handleTouchEnd : undefined}
       >
         {/* リップルエフェクト */}
         {readonly && onClick && (

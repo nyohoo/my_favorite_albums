@@ -12,21 +12,31 @@ import {
 import { AlbumGrid, type Album } from '@/components/AlbumGrid';
 import { AlbumSearch } from '@/components/AlbumSearch';
 import { createPost } from '@/lib/api';
+import { Hash, Plus } from 'lucide-react';
 
 const HASHTAGS = [
+  // 基本
   '#私を構成する9枚',
-  '#2023上半期ベストアルバム',
-  '#邦ロック好きな人と繋がりたい',
-  '#私を構成する9枚のロックアルバム',
-  '#私を構成する9枚の邦ロック',
+  
+  // 時期・年代
+  '#2025年のベストアルバム',
+  '#最近ハマってる9枚',
+  '#青春を支えてくれた9枚',
+  
+  // ジャンル（主要なものに絞る）
+  '#私を構成する9枚のロック',
   '#私を構成する9枚のJ-POP',
   '#私を構成する9枚のHIP-HOP',
   '#私を構成する9枚のR&B',
-  '#私を構成する9枚のデスメタル',
-  '#私を構成する9枚のインディーロック',
-  '#私を構成する9枚の電子音楽',
-  '#私を構成する9枚のアニソン',
-  '#私を構成するアイドル',
+  
+  // 感情・シーン
+  '#落ち込んだ時に聴く9枚',
+  '#元気になりたい時に聴く9枚',
+  '#ドライブで聴きたい9枚',
+  
+  // コミュニティ
+  '#同じ趣味の人と繋がりたい',
+  '#みんなに知ってほしい9枚',
 ];
 
 function App() {
@@ -35,11 +45,26 @@ function App() {
   const [isSearchDialogOpen, setIsSearchDialogOpen] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState<number | null>(null);
   const [userName, setUserName] = useState('');
-  const [title, setTitle] = useState('');
   const [selectedHashtag, setSelectedHashtag] = useState(HASHTAGS[0]);
+  const [customHashtag, setCustomHashtag] = useState('');
+  const [isCustomMode, setIsCustomMode] = useState(false);
+  const [hashtagList, setHashtagList] = useState<string[]>(HASHTAGS);
 
   // ローカルストレージからデータを取得
   useEffect(() => {
+    // カスタムハッシュタグリストを読み込み
+    const savedCustomHashtags = localStorage.getItem('customHashtags');
+    if (savedCustomHashtags) {
+      try {
+        const parsed = JSON.parse(savedCustomHashtags);
+        if (Array.isArray(parsed)) {
+          setHashtagList(parsed);
+        }
+      } catch (e) {
+        // エラー時はデフォルトを使用
+      }
+    }
+
     const savedAlbums = localStorage.getItem('albums');
     if (savedAlbums) {
       try {
@@ -165,19 +190,41 @@ function App() {
       return;
     }
 
+    // ハッシュタグの決定（カスタムモードの場合はカスタムハッシュタグを使用）
+    const finalHashtag = isCustomMode && customHashtag.trim() 
+      ? customHashtag.trim().startsWith('#') 
+        ? customHashtag.trim() 
+        : `#${customHashtag.trim()}`
+      : selectedHashtag;
+
+    if (!finalHashtag || finalHashtag.trim() === '') {
+      alert('タイトルを入力してください');
+      return;
+    }
+
     try {
       const result = await createPost({
         userName: userName.trim() || '', // 空欄の場合は空文字列を送信
-        title: title.trim() || selectedHashtag,
+        hashtag: finalHashtag,
         albums: selectedAlbums,
       });
 
       console.log('投稿作成成功:', result);
 
+      // カスタムハッシュタグをリストに追加（まだ存在しない場合）
+      if (isCustomMode && customHashtag.trim() && !hashtagList.includes(finalHashtag)) {
+        const newHashtagList = [finalHashtag, ...hashtagList];
+        setHashtagList(newHashtagList);
+        // ローカルストレージにも保存
+        localStorage.setItem('customHashtags', JSON.stringify(newHashtagList));
+      }
+
       // リセット
       setAlbums(Array(9).fill(null));
       setUserName('');
-      setTitle('');
+      setCustomHashtag('');
+      setIsCustomMode(false);
+      setSelectedHashtag(HASHTAGS[0]);
       localStorage.removeItem('albums');
 
       // 詳細画面に遷移
@@ -214,32 +261,61 @@ function App() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium mb-2">
-              タイトル（任意）
+            <label className="flex items-center gap-2 text-sm font-semibold mb-3 text-foreground">
+              <Hash className="h-4 w-4 text-primary" />
+              タイトル
             </label>
-            <input
-              type="text"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="例: 私を構成する9枚"
-              className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            />
-          </div>
-          <div>
-            <label className="block text-sm font-medium mb-2">
-              ハッシュタグ
-            </label>
-            <select
-              value={selectedHashtag}
-              onChange={(e) => handleHashtagChange(e.target.value)}
-              className="w-full px-3 py-2 sm:px-4 sm:py-2.5 border border-input rounded-md bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary text-sm"
-            >
-              {HASHTAGS.map((tag) => (
-                <option key={tag} value={tag}>
-                  {tag}
-                </option>
-              ))}
-            </select>
+            <div className="space-y-3">
+              {!isCustomMode ? (
+                <>
+                  <select
+                    value={selectedHashtag}
+                    onChange={(e) => handleHashtagChange(e.target.value)}
+                    className="w-full px-4 py-3 border-2 border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 text-base"
+                  >
+                    {hashtagList.map((tag) => (
+                      <option key={tag} value={tag}>
+                        {tag}
+                      </option>
+                    ))}
+                  </select>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomMode(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-input rounded-lg bg-background text-foreground hover:border-primary hover:bg-accent/50 transition-all duration-200 text-sm font-medium"
+                  >
+                    <Plus className="h-4 w-4" />
+                    カスタムタイトルを追加
+                  </button>
+                </>
+              ) : (
+                <>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={customHashtag}
+                      onChange={(e) => setCustomHashtag(e.target.value)}
+                      placeholder="#カスタムタイトル"
+                      className="flex-1 px-4 py-3 border-2 border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 text-base"
+                    />
+                    <Button
+                      type="button"
+                      onClick={() => {
+                        setIsCustomMode(false);
+                        setCustomHashtag('');
+                      }}
+                      variant="outline"
+                      className="px-4"
+                    >
+                      キャンセル
+                    </Button>
+                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    # は自動で追加されます（入力しなくてもOK）
+                  </p>
+                </>
+              )}
+            </div>
           </div>
         </div>
 
@@ -269,7 +345,7 @@ function App() {
 
         {/* 検索ダイアログ */}
         <Dialog open={isSearchDialogOpen} onOpenChange={setIsSearchDialogOpen}>
-          <DialogContent className="max-w-[95vw] sm:max-w-2xl max-h-[80vh] sm:max-h-[85vh] mx-2 sm:mx-0">
+          <DialogContent data-album-search-dialog="true" className="!top-4 !translate-y-0 sm:!top-[50%] sm:!-translate-y-1/2 !left-1/2 !-translate-x-1/2 max-w-[95vw] sm:max-w-2xl max-h-[80vh] sm:max-h-[85vh]">
             <DialogHeader>
               <DialogTitle>アルバムを検索</DialogTitle>
               <DialogDescription>

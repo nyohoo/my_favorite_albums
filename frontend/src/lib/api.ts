@@ -2,7 +2,9 @@
  * バックエンドAPIクライアント
  */
 
-const API_BASE_URL = '/api';
+// 環境変数からAPIエンドポイントを取得（本番環境ではCloudflare WorkersのURL）
+// 開発環境では相対パス（/api）を使用
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || '/api';
 
 /**
  * ヘルスチェック
@@ -47,7 +49,7 @@ export async function searchAlbums(query: string): Promise<{
  */
 export async function createPost(data: {
   userName: string;
-  title?: string;
+  hashtag: string; // タイトル（必須）
   albums: Array<{
     spotifyId: string;
     name: string;
@@ -79,6 +81,7 @@ export async function getPosts(limit = 20, offset = 0): Promise<{
     id: string;
     userId: string;
     title: string | null;
+    hashtag: string;
     createdAt: Date;
     updatedAt: Date;
   }>;
@@ -98,6 +101,7 @@ export async function getPost(id: string): Promise<{
     id: string;
     userId: string;
     title: string | null;
+    hashtag: string;
     userName: string | null;
     createdAt: Date;
     updatedAt: Date;
@@ -127,5 +131,26 @@ export async function getPost(id: string): Promise<{
  */
 export function getVibeCardUrl(postId: string): string {
   return `${API_BASE_URL}/vibe-card?postId=${encodeURIComponent(postId)}`;
+}
+
+/**
+ * 短縮URL生成
+ */
+export async function createShortUrl(postId: string): Promise<{
+  shortId: string;
+  shortUrl: string;
+}> {
+  const response = await fetch(`${API_BASE_URL}/short-url`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ postId }),
+  });
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.message || `Failed to create short URL: ${response.statusText}`);
+  }
+  return await response.json();
 }
 
