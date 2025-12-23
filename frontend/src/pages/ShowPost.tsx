@@ -78,14 +78,17 @@ export function ShowPost() {
   };
 
   const handleArtistClick = (album: Album) => {
+    console.log('handleArtistClick called with album:', album);
+    console.log('album.artistId:', album.artistId);
     if (album.artistId) {
       setSelectedAlbum(null);
       setSelectedArtistId(album.artistId);
       setPlayerType('artist');
       setPlayerOpen(true);
+      console.log('Opening artist player with artistId:', album.artistId);
     } else {
       // アーティストIDがない場合はアルバムプレーヤーを開く
-      console.warn('アーティストIDが取得できませんでした。アルバムプレーヤーを開きます。');
+      console.warn('アーティストIDが取得できませんでした。アルバムプレーヤーを開きます。', album);
       handleAlbumClick(album);
     }
   };
@@ -599,7 +602,7 @@ export function ShowPost() {
                     {/* アルバム画像 - AOTY風のサイズとホバーエフェクト */}
                     <div className="flex-shrink-0">
                       <div
-                        className="w-32 h-32 sm:w-40 sm:h-40 rounded-lg overflow-hidden cursor-pointer transition-all duration-300 group-hover:scale-105 shadow-lg group-hover:shadow-xl"
+                        className="w-32 h-32 sm:w-40 sm:h-40 overflow-hidden cursor-pointer transition-all duration-300 group-hover:scale-105 shadow-lg group-hover:shadow-xl"
                         onClick={() => handleAlbumClick(album)}
                       >
                         <img

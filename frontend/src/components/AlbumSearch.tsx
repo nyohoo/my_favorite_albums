@@ -64,6 +64,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
             imageUrl: album.imageUrl,
             releaseDate: album.releaseDate,
             spotifyUrl: album.spotifyUrl,
+            artistId: album.artistId,
           }))
         );
       } catch (err) {
@@ -106,7 +107,7 @@ export function AlbumSearch({ isOpen, onSelect, onClose }: AlbumSearchProps) {
           onChange={(e) => {
             setQuery(e.target.value);
           }}
-          className="pl-10 text-foreground relative z-0"
+          className="pl-10 text-foreground relative z-0 !text-base"
           autoFocus={isOpen}
         />
       </div>

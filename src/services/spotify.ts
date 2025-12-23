@@ -11,6 +11,7 @@ export interface SpotifyAlbum {
   releaseDate: string;
   spotifyUrl: string;
   spotifyId: string;
+  artistId?: string;
 }
 
 interface SpotifyAccessTokenResponse {
@@ -24,7 +25,7 @@ interface SpotifySearchResponse {
     items: Array<{
       id: string;
       name: string;
-      artists: Array<{ name: string }>;
+      artists: Array<{ id: string; name: string }>;
       images: Array<{ url: string; height: number; width: number }>;
       release_date: string;
       external_urls: { spotify: string };
@@ -103,6 +104,8 @@ export async function searchAlbums(
 
     // アーティスト名を結合（複数アーティストの場合）
     const artistName = album.artists.map((a) => a.name).join(', ');
+    // 最初のアーティストのIDを取得
+    const artistId = album.artists.length > 0 ? album.artists[0].id : undefined;
 
     return {
       id: `spotify_${album.id}`, // DB用のID（Spotify IDをプレフィックス付きで保存）
@@ -112,6 +115,7 @@ export async function searchAlbums(
       imageUrl: image?.url || '',
       releaseDate: album.release_date || '',
       spotifyUrl: album.external_urls.spotify,
+      artistId: artistId,
     };
   });
 }

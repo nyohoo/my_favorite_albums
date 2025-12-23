@@ -85,8 +85,8 @@ export function AlbumGrid({
     }),
     useSensor(TouchSensor, {
       activationConstraint: {
-        delay: 200, // タッチ操作では200ms長押しでドラッグ開始
-        tolerance: 5, // 5pxまでの移動は許容
+        delay: 150, // タッチ操作では150ms長押しでドラッグ開始（スクロールより優先）
+        tolerance: 8, // 8pxまでの移動は許容（ドラッグ開始を早く検出）
       },
     }),
     useSensor(KeyboardSensor, {
