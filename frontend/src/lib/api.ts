@@ -31,6 +31,7 @@ export async function searchAlbums(query: string): Promise<{
     imageUrl: string;
     releaseDate: string;
     spotifyUrl: string;
+    artistId?: string;
   }>;
 }> {
   const response = await fetch(`${API_BASE_URL}/search?q=${encodeURIComponent(query)}`);
@@ -57,6 +58,7 @@ export async function createPost(data: {
     imageUrl: string;
     releaseDate?: string;
     spotifyUrl?: string;
+    artistId?: string;
   }>;
 }): Promise<{ success: boolean; id: string; userId: string }> {
   const response = await fetch(`${API_BASE_URL}/posts`, {

@@ -208,8 +208,9 @@ export function AlbumSlot({
   // readonlyモードの場合は、角丸をなくし、シームレスなデザインにする
   // タップ可能であることを示すアニメーションクラスを追加
   // アルバム詳細セクションと同じようなふわっとした反応を追加
+  // スマホでのタッチ時のアニメーションを強調
   const cardClassName = readonly
-    ? `relative h-full rounded-none border-0 shadow-none transition-all duration-300 ${onClick ? 'cursor-pointer active:scale-[0.98] active:opacity-90 sm:hover:scale-[1.02] sm:hover:opacity-95' : ''}`
+    ? `relative h-full rounded-none border-0 shadow-none transition-all duration-200 ${onClick ? 'cursor-pointer active:scale-[1.07] active:opacity-90 active:brightness-110 sm:hover:scale-[1.02] sm:hover:opacity-95' : ''}`
     : `relative h-full group ${isDragging ? 'ring-2 ring-primary' : ''} ${onClick ? 'cursor-pointer' : ''}`;
   
   const imageClassName = readonly
@@ -227,7 +228,10 @@ export function AlbumSlot({
   return (
     <div
       ref={setNodeRef}
-      style={style}
+      style={{
+        ...style,
+        touchAction: !readonly && album ? 'none' : undefined, // ドラッグ可能な時はスクロールを無効化
+      }}
       className={`aspect-square ${isDragging ? 'cursor-grabbing' : ''}`}
     >
       <Card 
@@ -260,7 +264,7 @@ export function AlbumSlot({
           style={{ 
             cursor: onClick ? 'pointer' : (album ? 'grab' : 'default'), 
             WebkitTouchCallout: 'none',
-            touchAction: readonly && onClick ? 'pan-y' : undefined
+            touchAction: readonly && onClick ? 'pan-y' : (!readonly && album ? 'none' : undefined) // ドラッグ可能な時はスクロールを無効化
           }}
         >
           {/* ドラッグハンドル（readonlyモードでは非表示） */}

@@ -296,7 +296,7 @@ export function CreatePost() {
                       <button
                         type="button"
                         onClick={() => setIsCustomMode(true)}
-                        className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-input rounded-lg bg-background text-foreground hover:border-primary hover:bg-accent/50 transition-all duration-200 text-sm font-medium"
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2 border-2 border-dashed border-input rounded-lg bg-background text-foreground sm:hover:border-primary sm:hover:bg-accent/50 transition-colors duration-150 text-sm font-medium"
                       >
                         <Plus className="h-4 w-4" />
                         カスタムタイトルを追加
@@ -304,26 +304,24 @@ export function CreatePost() {
                     </>
                   ) : (
                     <>
-                      <div className="flex gap-2">
-                        <input
-                          type="text"
-                          value={customHashtag}
-                          onChange={(e) => setCustomHashtag(e.target.value)}
-                          placeholder="#カスタムタイトル"
-                          className="flex-1 px-4 py-3 border-2 border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 text-base"
-                        />
-                        <Button
-                          type="button"
-                          onClick={() => {
-                            setIsCustomMode(false);
-                            setCustomHashtag('');
-                          }}
-                          variant="outline"
-                          className="px-4"
-                        >
-                          キャンセル
-                        </Button>
-                      </div>
+                      <input
+                        type="text"
+                        value={customHashtag}
+                        onChange={(e) => setCustomHashtag(e.target.value)}
+                        placeholder="#カスタムタイトル"
+                        className="w-full px-4 py-3 border-2 border-input rounded-lg bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all duration-200 text-base"
+                      />
+                      <Button
+                        type="button"
+                        onClick={() => {
+                          setIsCustomMode(false);
+                          setCustomHashtag('');
+                        }}
+                        variant="outline"
+                        className="w-full"
+                      >
+                        キャンセル
+                      </Button>
                       <p className="text-xs text-muted-foreground">
                         # は自動で追加されます（入力しなくてもOK）
                       </p>

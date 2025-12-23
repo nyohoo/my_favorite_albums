@@ -467,6 +467,7 @@ app.post('/api/posts', async (c) => {
         imageUrl: string;
         releaseDate?: string;
         spotifyUrl?: string;
+        artistId?: string;
       }>;
     }>();
 
@@ -585,6 +586,7 @@ app.post('/api/posts', async (c) => {
             imageUrl: albumData.imageUrl,
             releaseDate: albumData.releaseDate || null,
             spotifyUrl: albumData.spotifyUrl || null,
+            artistId: albumData.artistId || null,
             createdAt: now,
             updatedAt: now,
           });
@@ -592,6 +594,21 @@ app.post('/api/posts', async (c) => {
             .select()
             .from(albums)
             .where(eq(albums.id, albumId))
+            .limit(1)
+            .get();
+        } else if (albumData.artistId && !album.artistId) {
+          // 既存のアルバムでartistIdがない場合、更新
+          await db
+            .update(albums)
+            .set({
+              artistId: albumData.artistId,
+              updatedAt: now,
+            })
+            .where(eq(albums.id, album.id));
+          album = await db
+            .select()
+            .from(albums)
+            .where(eq(albums.id, album.id))
             .limit(1)
             .get();
         }
